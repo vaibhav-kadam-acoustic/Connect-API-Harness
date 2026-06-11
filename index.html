@@ -157,8 +157,6 @@ select option{background:var(--bg)}
     <label>Region</label>
     <select id="region"></select>
     <div class="ep-pill"><span class="ep-dot"></span><span id="ep-txt"></span></div>
-    <label style="margin-left:8px">Proxy <span style="color:var(--dim);font-weight:400;letter-spacing:0;text-transform:none">(optional)</span></label>
-    <input type="text" id="proxy-url" placeholder="https://your-worker.workers.dev" style="width:300px"/>
   </div>
 
   <div class="body">
@@ -1035,7 +1033,7 @@ const ApiRunner = {
   async run() {
     const key   = document.getElementById('api-key')?.value?.trim();
     const ep    = document.getElementById('region')?.value;
-    const proxy = document.getElementById('proxy-url')?.value?.trim();
+    const proxy = 'https://connect-api-proxy.vaibhav-kadam.workers.dev';
     const query = OutputRenderer.rawQuery();
 
     if (!key) { this._setStatus('warn', 'No API key'); this._setBody('⚠ Enter your x-api-key in the bar above.', true); return; }

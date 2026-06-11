@@ -117,6 +117,27 @@ select option{background:var(--bg)}
 .toast{position:fixed;bottom:18px;right:18px;z-index:100;background:var(--violet);border:1px solid var(--peri);color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-family:var(--ui);font-weight:500;box-shadow:0 8px 24px rgba(31,30,93,.25);display:none}
 @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 .fadein{animation:fadeIn .17s ease}
+/* ── Run Button & Response Panel ─────────────────────────── */
+.run-btn{padding:7px 16px;background:var(--green);border:none;border-radius:8px;color:#0a2a1a;font-family:var(--ui);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;letter-spacing:.3px}
+.run-btn:hover{background:#00c47e;box-shadow:0 0 0 3px var(--greenglow)}
+.run-btn:disabled{opacity:.5;cursor:not-allowed}
+.run-btn.loading{background:var(--bg3);color:var(--muted)}
+.response-section{border-top:1px solid var(--line);margin-top:0}
+.response-hdr{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg2)}
+.response-label{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;font-family:var(--ui);font-weight:500}
+.status-pill{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:4px;font-weight:600}
+.status-ok{background:var(--greenlight);color:#007a4d;border:1px solid var(--green)}
+.status-err{background:rgba(232,64,64,.1);color:var(--red);border:1px solid var(--red)}
+.status-warn{background:rgba(232,150,10,.1);color:var(--amber);border:1px solid var(--amber)}
+.response-body{padding:16px;overflow:auto;max-height:340px;font-family:var(--mono);font-size:11.5px;line-height:1.7;white-space:pre;color:var(--text)}
+.response-body.empty{color:var(--dim);font-style:italic;font-family:var(--ui);font-size:12px;padding:20px 16px}
+.response-body .rk{color:var(--peri2)}
+.response-body .rv{color:#007a4d}
+.response-body .rn{color:#c06000}
+.response-body .rb{color:var(--violet);font-weight:600}
+.response-body .re{color:var(--red)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:10px;height:10px;border:2px solid var(--line);border-top-color:var(--peri);border-radius:50%;animation:spin .7s linear infinite;margin-right:6px;vertical-align:middle}
 </style>
 </head>
 <body>
@@ -978,6 +999,7 @@ const ContentRenderer = {
             <span class="out-label">Generated Query</span>
             <div class="out-actions">
               <button class="copy-btn" id="copy-btn" onclick="Clipboard.copy('query')">⌘ Copy Query</button>
+              <button class="run-btn" id="run-btn" onclick="ApiRunner.run()">▶ Run</button>
             </div>
           </div>
           <div class="query-wrap" id="query-wrap"></div>
@@ -985,6 +1007,13 @@ const ContentRenderer = {
           <div class="query-wrap" id="curl-wrap"></div>
           <div class="curl-actions">
             <button class="copy-btn" id="curl-copy-btn" onclick="Clipboard.copy('curl')">⌘ Copy curl</button>
+          </div>
+          <div class="response-section" id="response-section">
+            <div class="response-hdr">
+              <span class="response-label">Response</span>
+              <span class="status-pill" id="response-status" style="display:none"></span>
+            </div>
+            <div class="response-body empty" id="response-body">Run a query to see the response here.</div>
           </div>
         </div>
       </div>`;
@@ -997,7 +1026,95 @@ const ContentRenderer = {
 
 
 /* ═══════════════════════════════════════════════════════════════
-   12. CLIPBOARD
+   12. API RUNNER
+   Executes the current query against the selected endpoint.
+   ═══════════════════════════════════════════════════════════════ */
+const ApiRunner = {
+  async run() {
+    const key = document.getElementById('api-key')?.value?.trim();
+    const ep  = document.getElementById('region')?.value;
+    const query = OutputRenderer.rawQuery();
+
+    if (!key) { this._setStatus('warn', 'No API key'); this._setBody('⚠ Enter your x-api-key in the bar above.', true); return; }
+    if (!query) { this._setStatus('warn', 'No query'); this._setBody('⚠ Select an operation first.', true); return; }
+
+    const btn = document.getElementById('run-btn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Running…'; }
+    this._setStatus('', '');
+    this._setBody('', true);
+
+    try {
+      const res = await fetch(ep, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key },
+        body: JSON.stringify({ query }),
+      });
+
+      let json;
+      try { json = await res.json(); } catch { json = { error: 'Non-JSON response from server' }; }
+
+      const hasErrors = json.errors && json.errors.length > 0;
+      if (!res.ok || hasErrors) {
+        const msg = hasErrors ? json.errors.map(e => e.message).join('; ') : `HTTP ${res.status}`;
+        this._setStatus('err', `${res.status} Error`);
+        this._setBody(this._colorize(json), false);
+      } else {
+        this._setStatus('ok', `${res.status} OK`);
+        this._setBody(this._colorize(json), false);
+      }
+    } catch (err) {
+      const isCors = err instanceof TypeError && err.message.toLowerCase().includes('failed to fetch');
+      this._setStatus('err', isCors ? 'CORS blocked' : 'Network error');
+      this._setBody(
+        isCors
+          ? `⚠ CORS blocked — the Connect API rejected the request from this origin.\n\nAsk the Connect platform team to add this origin to their CORS allowlist:\n  ${location.origin}\n\nAlternatively, use the ⌘ Copy curl button and run the command in your terminal.`
+          : `⚠ ${err.message}`,
+        true
+      );
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '▶ Run'; }
+    }
+  },
+
+  _setStatus(type, text) {
+    const el = document.getElementById('response-status');
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'status-pill' + (type ? ' status-' + type : '');
+    el.style.display = text ? '' : 'none';
+  },
+
+  _setBody(content, isPlain) {
+    const el = document.getElementById('response-body');
+    if (!el) return;
+    if (isPlain) {
+      el.className = 'response-body empty';
+      el.textContent = content;
+    } else {
+      el.className = 'response-body';
+      el.innerHTML = content;
+    }
+  },
+
+  _colorize(obj) {
+    return JSON.stringify(obj, null, 2)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+\.?\d*([eE][+-]?\d+)?)/g, match => {
+        if (/^"/.test(match)) {
+          return /:$/.test(match)
+            ? `<span class="rk">${match}</span>`
+            : `<span class="rv">${match}</span>`;
+        }
+        if (/true|false/.test(match)) return `<span class="rb">${match}</span>`;
+        if (/null/.test(match)) return `<span class="re">${match}</span>`;
+        return `<span class="rn">${match}</span>`;
+      });
+  },
+};
+
+
+/* ═══════════════════════════════════════════════════════════════
+   13. CLIPBOARD
    ═══════════════════════════════════════════════════════════════ */
 const Clipboard = {
   copy(target) {
@@ -1030,7 +1147,7 @@ const Clipboard = {
 
 
 /* ═══════════════════════════════════════════════════════════════
-   13. INIT
+   14. INIT
    ═══════════════════════════════════════════════════════════════ */
 (function init() {
   /* Populate region selector from REGIONS config */

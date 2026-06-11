@@ -6,75 +6,61 @@
 <title>Acoustic Connect — GraphQL Query Builder</title>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
+/* ── CSS Variables & Brand ────────────────────────────────── */
 :root{
-/* ── Acoustic Connect Brand Theme ───────────────────────────── */
-/* Backgrounds */
---bg:#ffffff;--bg2:#f8f8fb;--bg3:#efefef;--bg4:#e8e8f0;
-/* Borders */
---line:#d0d1d8;--line2:#c2c3cc;
-/* Text spectrum — Violet family */
---dim:#b0b2c0;--mid:#8b8da0;--muted:#5a5d77;--soft:#3d4060;--text:#2a2c50;--bright:#1f1e5d;
-/* Brand accent — Periwinkle */
---peri:#706cff;--peri2:#5754e0;--periglow:rgba(112,108,255,.18);--perilight:rgba(112,108,255,.08);
-/* Brand accents */
---green:#00df8f;--greenglow:rgba(0,223,143,.2);--greenlight:rgba(0,223,143,.1);
---lime:#c8ff49;--limelight:rgba(200,255,73,.15);
---violet:#1f1e5d;
-/* States */
---red:#e84040;--amber:#e8960a;
-/* Fonts */
---mono:'JetBrains Mono',monospace;--ui:'Bricolage Grotesque',-apple-system,sans-serif}
-*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;overflow:hidden}
+  --bg:#ffffff;--bg2:#f8f8fb;--bg3:#efefef;--bg4:#e8e8f0;
+  --line:#d0d1d8;--line2:#c2c3cc;
+  --dim:#b0b2c0;--mid:#8b8da0;--muted:#5a5d77;--soft:#3d4060;--text:#2a2c50;--bright:#1f1e5d;
+  --peri:#706cff;--peri2:#5754e0;--periglow:rgba(112,108,255,.18);--perilight:rgba(112,108,255,.08);
+  --green:#00df8f;--greenglow:rgba(0,223,143,.2);--greenlight:rgba(0,223,143,.1);
+  --lime:#c8ff49;--limelight:rgba(200,255,73,.15);
+  --violet:#1f1e5d;
+  --red:#e84040;--amber:#e8960a;
+  --mono:'JetBrains Mono',monospace;--ui:'Bricolage Grotesque',-apple-system,sans-serif;
+}
+/* ── Reset ───────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:var(--ui)}
-body::before{content:none}
-body::after{content:none}
+/* ── Layout ──────────────────────────────────────────────── */
 .wrap{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh}
-header{border-bottom:1px solid var(--line);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;
-background:var(--violet);backdrop-filter:none;flex-shrink:0;box-shadow:0 1px 0 rgba(112,108,255,.3)}
-.hmark{width:30px;height:30px;border-radius:8px;background:var(--peri);
-display:flex;align-items:center;justify-content:center;font-family:var(--ui);font-size:11px;font-weight:700;
-color:#fff;box-shadow:0 2px 8px var(--periglow);letter-spacing:-.5px}
+.body{display:flex;flex:1;overflow:hidden}
+.content{flex:1;overflow:hidden;display:flex;flex-direction:column}
+/* ── Header ──────────────────────────────────────────────── */
+header{border-bottom:1px solid var(--line);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;background:var(--violet);flex-shrink:0;box-shadow:0 1px 0 rgba(112,108,255,.3)}
+.hmark{width:30px;height:30px;border-radius:8px;background:var(--peri);display:flex;align-items:center;justify-content:center;font-family:var(--ui);font-size:11px;font-weight:700;color:#fff;box-shadow:0 2px 8px var(--periglow);letter-spacing:-.5px}
 .hname{font-family:var(--ui);font-size:14px;font-weight:600;color:#ffffff;letter-spacing:-.2px}
 .hsep{width:1px;height:18px;background:rgba(255,255,255,.25)}
 .htag{font-size:11px;color:rgba(255,255,255,.55);letter-spacing:.2px;font-family:var(--ui)}
-.warn-pill{font-size:9px;background:rgba(200,255,73,.18);border:1px solid rgba(200,255,73,.5);
-color:var(--lime);padding:3px 8px;border-radius:20px;margin-left:6px;font-family:var(--ui);font-weight:500}
-.apibar{display:flex;align-items:center;gap:10px;padding:7px 20px;border-bottom:1px solid var(--line);
-background:var(--bg2);flex-shrink:0;flex-wrap:wrap}
-.apibar{display:flex;align-items:center;gap:10px;padding:8px 20px;border-bottom:1px solid var(--line);
-background:var(--bg2);flex-shrink:0;flex-wrap:wrap}
+.warn-pill{font-size:9px;background:rgba(200,255,73,.18);border:1px solid rgba(200,255,73,.5);color:var(--lime);padding:3px 8px;border-radius:20px;margin-left:6px;font-family:var(--ui);font-weight:500}
+/* ── API Bar ─────────────────────────────────────────────── */
+.apibar{display:flex;align-items:center;gap:10px;padding:8px 20px;border-bottom:1px solid var(--line);background:var(--bg2);flex-shrink:0;flex-wrap:wrap}
 .apibar label{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;font-family:var(--ui);font-weight:500}
-.apibar input{background:var(--bg);border:1.5px solid var(--line);border-radius:8px;color:var(--text);
-font-family:var(--mono);font-size:11px;padding:6px 10px;outline:none;width:320px;transition:border-color .15s}
+.apibar input{background:var(--bg);border:1.5px solid var(--line);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 10px;outline:none;width:320px;transition:border-color .15s}
 .apibar input:focus{border-color:var(--peri);box-shadow:0 0 0 3px var(--perilight)}
-.apibar select{background:var(--bg);border:1.5px solid var(--line);border-radius:8px;color:var(--text);
-font-family:var(--ui);font-size:12px;padding:6px 10px;outline:none;cursor:pointer;transition:border-color .15s}
+.apibar select{background:var(--bg);border:1.5px solid var(--line);border-radius:8px;color:var(--text);font-family:var(--ui);font-size:12px;padding:6px 10px;outline:none;cursor:pointer;transition:border-color .15s}
 .apibar select:focus{border-color:var(--peri)}
-.ep-pill{font-size:10px;color:var(--peri2);padding:4px 10px;background:var(--perilight);
-border:1.5px solid rgba(112,108,255,.2);border-radius:20px;display:flex;align-items:center;gap:6px;font-family:var(--ui);font-weight:500}
+.ep-pill{font-size:10px;color:var(--peri2);padding:4px 10px;background:var(--perilight);border:1.5px solid rgba(112,108,255,.2);border-radius:20px;display:flex;align-items:center;gap:6px;font-family:var(--ui);font-weight:500}
 .ep-dot{width:6px;height:6px;border-radius:50%;background:var(--peri);box-shadow:0 0 6px var(--periglow);flex-shrink:0}
-.body{display:flex;flex:1;overflow:hidden}
-.sidebar{width:236px;border-right:1px solid var(--line);overflow-y:auto;flex-shrink:0;background:var(--bg2)}
-.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--line2)}
-.sb-hdr{padding:10px 14px 5px;font-size:9px;color:var(--dim);letter-spacing:2.5px;text-transform:uppercase;border-bottom:1px solid var(--line)}
+/* ── Sidebar ─────────────────────────────────────────────── */
 .sidebar{width:248px;border-right:1px solid var(--line);overflow-y:auto;flex-shrink:0;background:var(--bg2)}
-.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
 .sb-hdr{padding:12px 14px 6px;font-size:9px;color:var(--mid);letter-spacing:2.5px;text-transform:uppercase;border-bottom:1px solid var(--line);font-family:var(--ui);font-weight:600}
 .sb-cat{padding:14px 14px 4px;font-size:9px;color:var(--mid);letter-spacing:2px;text-transform:uppercase;font-family:var(--ui);font-weight:600}
-.sb-btn{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;border:none;background:transparent;
-width:100%;text-align:left;font-family:var(--ui);font-size:12px;font-weight:400;color:var(--muted);
-border-left:3px solid transparent;transition:all .12s;border-radius:0}
+.sb-btn{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:var(--ui);font-size:12px;font-weight:400;color:var(--muted);border-left:3px solid transparent;transition:all .12s;border-radius:0}
 .sb-btn:hover{background:var(--bg3);color:var(--text)}
 .sb-btn.active{background:var(--perilight);color:var(--peri2);border-left-color:var(--peri);font-weight:500}
 .sb-btn.active.mut{background:var(--greenlight);color:#008f5a;border-left-color:var(--green)}
 .tag{font-size:8px;font-weight:700;padding:2px 7px;border-radius:20px;flex-shrink:0;letter-spacing:.8px;font-family:var(--ui)}
 .tag.q{background:var(--perilight);color:var(--peri2);border:1px solid rgba(112,108,255,.25)}
 .tag.m{background:var(--greenlight);color:#007a4d;border:1px solid rgba(0,223,143,.3)}
-.content{flex:1;overflow:hidden;display:flex;flex-direction:column}
+/* ── Empty State ─────────────────────────────────────────── */
 .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px}
 .empty-glyph{font-size:44px;color:var(--peri);opacity:.3}
 .empty-t{font-family:var(--ui);font-size:17px;font-weight:700;color:var(--violet)}
 .empty-s{font-size:12px;color:var(--muted);text-align:center;line-height:1.7;max-width:340px;font-family:var(--ui)}
+/* ── Operation Area ──────────────────────────────────────── */
 .op-area{flex:1;overflow:hidden;display:flex;flex-direction:column}
 .op-top{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--bg);flex-shrink:0}
 .op-top-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
@@ -82,23 +68,28 @@ border-left:3px solid transparent;transition:all .12s;border-radius:0}
 .op-desc{font-size:12px;color:var(--muted);font-family:var(--ui);line-height:1.5}
 .op-fix{font-size:11px;color:#007a4d;background:var(--greenlight);border:1px solid rgba(0,223,143,.35);padding:4px 10px;border-radius:6px;margin-top:6px;display:inline-block;font-family:var(--ui)}
 .split{flex:1;overflow:hidden;display:flex}
+/* ── Form Pane ───────────────────────────────────────────── */
 .form-pane{width:312px;border-right:1px solid var(--line);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;flex-shrink:0;background:var(--bg2)}
-.form-pane::-webkit-scrollbar{width:3px}.form-pane::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+.form-pane::-webkit-scrollbar{width:3px}
+.form-pane::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
 .section{background:var(--bg);border:1.5px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(31,30,93,.07)}
 .sec-hdr{padding:9px 13px;border-bottom:1px solid var(--line);font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:6px;font-family:var(--ui);font-weight:600;background:var(--bg2)}
 .sec-body{padding:13px;display:flex;flex-direction:column;gap:10px}
 .field{display:flex;flex-direction:column;gap:4px}
 .field label{font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:4px;font-family:var(--ui);font-weight:600}
-.req-star{color:var(--red)}.opt-tag{font-size:9px;color:var(--mid);border:1px solid var(--line);padding:1px 5px;border-radius:4px;text-transform:none;letter-spacing:0;font-weight:400;font-family:var(--ui)}
+.req-star{color:var(--red)}
+.opt-tag{font-size:9px;color:var(--mid);border:1px solid var(--line);padding:1px 5px;border-radius:4px;text-transform:none;letter-spacing:0;font-weight:400;font-family:var(--ui)}
 .field-hint{font-size:10px;color:var(--mid);margin-top:2px;line-height:1.4;font-family:var(--ui)}
 .field-warn{font-size:10px;color:var(--amber);margin-top:2px;line-height:1.4;font-family:var(--ui)}
 input,select,textarea{background:var(--bg);border:1.5px solid var(--line);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:11.5px;padding:7px 10px;outline:none;width:100%;transition:border-color .15s,box-shadow .15s}
 input:focus,select:focus,textarea:focus{border-color:var(--peri);box-shadow:0 0 0 3px var(--perilight)}
-input::placeholder{color:var(--dim)}select option{background:var(--bg)}
+input::placeholder,textarea::placeholder{color:var(--dim)}
+select option{background:var(--bg)}
 .checkbox-row{display:flex;align-items:center;gap:8px;cursor:pointer}
 .checkbox-row input[type=checkbox]{width:auto;accent-color:var(--peri);cursor:pointer}
 .checkbox-row span{font-size:12px;color:var(--soft);font-family:var(--ui)}
 .no-params{color:var(--mid);font-size:12px;line-height:1.8;padding:4px 0;font-family:var(--ui)}
+/* ── Output Pane ─────────────────────────────────────────── */
 .output-pane{flex:1;overflow:hidden;display:flex;flex-direction:column;background:var(--bg)}
 .out-hdr{padding:10px 18px;border-bottom:1px solid var(--line);background:var(--bg2);display:flex;align-items:center;gap:9px;flex-shrink:0}
 .out-label{font-size:9px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;font-family:var(--ui);font-weight:600}
@@ -108,16 +99,21 @@ input::placeholder{color:var(--dim)}select option{background:var(--bg)}
 .copy-btn.done{background:var(--green);color:var(--violet)}
 .alt-btn{padding:7px 12px;background:transparent;border:1.5px solid var(--line);color:var(--muted);border-radius:8px;cursor:pointer;font-family:var(--ui);font-size:12px;transition:all .15s}
 .alt-btn:hover{border-color:var(--peri);color:var(--peri)}
+/* ── Query Display & Syntax ──────────────────────────────── */
 .query-wrap{flex:1;overflow:auto;padding:16px;background:var(--bg)}
-.query-wrap::-webkit-scrollbar{width:5px}.query-wrap::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+.query-wrap::-webkit-scrollbar{width:5px}
+.query-wrap::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
 .query-display{font-size:12.5px;line-height:1.9;white-space:pre;counter-reset:line}
 .ql{display:block;padding-left:42px;position:relative}
 .ql::before{content:counter(line);counter-increment:line;position:absolute;left:0;width:32px;text-align:right;color:var(--dim);font-size:10px;padding-right:8px;border-right:1px solid var(--line);user-select:none}
-.kw{color:var(--violet);font-weight:600}.arg{color:var(--peri2)}.str{color:#007a4d}
-.num{color:#c06000}.enm{color:var(--peri)}.cm{color:var(--mid);font-style:italic}.br{color:var(--muted)}
-.usage-bar{border-top:1px solid var(--line);background:var(--bg2);padding:8px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;flex-wrap:wrap}
-.usage-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-family:var(--ui)}
-.uc{font-size:9px;background:var(--bg2);border:1px solid var(--line);padding:2px 6px;border-radius:4px;color:var(--muted);font-family:var(--mono)}
+.kw{color:var(--violet);font-weight:600}
+.arg{color:var(--peri2)}
+.str{color:#007a4d}
+.num{color:#c06000}
+.br{color:var(--muted)}
+/* ── Utilities & Animation ───────────────────────────────── */
+.curl-divider{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;border-top:1px solid var(--line);padding:10px 16px 0;margin-top:12px}
+.curl-actions{padding:8px 16px 12px}
 .toast{position:fixed;bottom:18px;right:18px;z-index:100;background:var(--violet);border:1px solid var(--peri);color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-family:var(--ui);font-weight:500;box-shadow:0 8px 24px rgba(31,30,93,.25);display:none}
 @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 .fadein{animation:fadeIn .17s ease}
@@ -125,694 +121,937 @@ input::placeholder{color:var(--dim)}select option{background:var(--bg)}
 </head>
 <body>
 <div class="wrap">
-<header>
-  <div class="hmark">AC</div>
-  <div class="hname">Acoustic Connect</div>
-  <div class="hsep"></div>
-  <div class="htag">GraphQL Query Builder</div>
-  <span class="warn-pill">⚠ Live-tested · filter syntax</span>
-  <div style="margin-left:auto;font-size:10px;color:rgba(255,255,255,.45);font-family:'Bricolage Grotesque',sans-serif">Schema R5 · runtime-verified</div>
-</header>
+  <header>
+    <div class="hmark">AC</div>
+    <div class="hname">Acoustic Connect</div>
+    <div class="hsep"></div>
+    <div class="htag">GraphQL Query Builder</div>
+    <span class="warn-pill">⚠ Live-tested · filter syntax</span>
+    <div style="margin-left:auto;font-size:10px;color:rgba(255,255,255,.45);font-family:'Bricolage Grotesque',sans-serif">Schema R5 · runtime-verified</div>
+  </header>
 
-<div class="apibar">
-  <label>API Key</label>
-  <input type="password" id="api-key" placeholder="x-api-key value" autocomplete="off"/>
-  <label>Region</label>
-  <select id="region" onchange="updateEp()">
-    <option value="https://connect-gql-us-1.goacoustic.com">US East (us-1)</option>
-    <option value="https://connect-gql-eu-1.goacoustic.com">EU (eu-1)</option>
-    <option value="https://connect-gql-au-1.goacoustic.com">APAC AU (au-1)</option>
-    <option value="https://connect-gql-ca-1.goacoustic.com">Canada (ca-1)</option>
-  </select>
-  <div class="ep-pill"><span class="ep-dot"></span><span id="ep-txt">https://connect-gql-us-1.goacoustic.com</span></div>
-</div>
+  <div class="apibar">
+    <label>API Key</label>
+    <input type="password" id="api-key" placeholder="x-api-key value" autocomplete="off"/>
+    <label>Region</label>
+    <select id="region"></select>
+    <div class="ep-pill"><span class="ep-dot"></span><span id="ep-txt"></span></div>
+  </div>
 
-<div class="body">
-  <div class="sidebar"><div id="sb"></div></div>
-  <div class="content" id="content">
-    <div class="empty">
-      <div class="empty-glyph">{ }</div>
-      <div class="empty-t">Select an operation</div>
-      <div class="empty-s">All queries runtime-verified against the live API. The <code style="color:var(--amber)">type</code> argument on dataSets is removed (deprecated + dead in production) — use <code style="color:var(--peri)">filter</code> instead.</div>
+  <div class="body">
+    <div class="sidebar"><div id="sb"></div></div>
+    <div class="content" id="content">
+      <div class="empty">
+        <div class="empty-glyph">{ }</div>
+        <div class="empty-t">Select an operation</div>
+        <div class="empty-s">All queries runtime-verified against the live API. The <code style="color:var(--amber)">type</code> argument on dataSets is removed (deprecated + dead in production) — use <code style="color:var(--peri)">filter</code> instead.</div>
+      </div>
     </div>
   </div>
-</div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-function updateEp(){document.getElementById('ep-txt').textContent=document.getElementById('region').value}
+/* ═══════════════════════════════════════════════════════════════
+   1. CONFIG
+   ───────────────────────────────────────────────────────────────
+   Add or edit API regions here — no other changes needed.
+   ═══════════════════════════════════════════════════════════════ */
+const REGIONS = [
+  { label: 'US East (us-1)', url: 'https://connect-gql-us-1.goacoustic.com' },
+  { label: 'EU (eu-1)',       url: 'https://connect-gql-eu-1.goacoustic.com' },
+  { label: 'APAC AU (au-1)', url: 'https://connect-gql-au-1.goacoustic.com' },
+  { label: 'Canada (ca-1)',  url: 'https://connect-gql-ca-1.goacoustic.com' },
+];
 
-// KEY RUNTIME FIX (confirmed by live curl testing 2025-03-06):
-// ❌ dataSets(type: AUDIENCE)  → "Unknown argument type on field Query.dataSets"
-//    The 'type' arg is @deprecated in schema and ALREADY REMOVED from production
-// ✅ dataSets(filter: [{ field: "type", eq: "AUDIENCE" }])  → works
-// ❌ DataSetAttribute.attributeId  → field doesn't exist on live API
-// ✅ DataSetAttribute fields: name, type, category, tracking, identifyAs, mapAs
 
-const OPS=[
-{cat:'🔍 Introspection',list:[
-  {id:'info',label:'Schema Info (_info)',type:'q',desc:'Returns API version and subscription info.',sections:[],
-    build:()=>`{\n  _info {\n    version\n    subscriptionId\n  }\n}`}
+/* ═══════════════════════════════════════════════════════════════
+   2. UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
+/** HTML-escape a value for safe injection into attribute strings */
+function _esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   3. FIELD RENDERER REGISTRY
+   ───────────────────────────────────────────────────────────────
+   Maps field type → render function(f, val) → HTML string.
+
+   To add a new input type:
+     FieldRenderers.mytype = (f, val) => '<html string>'
+
+   Supported types: text | number | password | select | checkbox | textarea
+   ═══════════════════════════════════════════════════════════════ */
+const FieldRenderers = {
+  text(f, val) {
+    return `<input id="f-${f.id}" type="text" placeholder="${f.ph||''}" value="${_esc(val??'')}"/>`;
+  },
+  number(f, val) {
+    return `<input id="f-${f.id}" type="number" placeholder="${f.ph||''}" value="${_esc(val??'')}"/>`;
+  },
+  password(f, val) {
+    return `<input id="f-${f.id}" type="password" placeholder="${f.ph||''}" value="${_esc(val??'')}"/>`;
+  },
+  select(f, val) {
+    const current = val ?? f.def;
+    const opts = (f.opts||[]).map(o =>
+      `<option value="${_esc(o)}"${current===o?' selected':''}>${_esc(o)}</option>`
+    ).join('');
+    return `<select id="f-${f.id}">${opts}</select>`;
+  },
+  checkbox(f, val) {
+    const checked = (val !== undefined ? val : f.def) ? 'checked' : '';
+    return `<label class="checkbox-row"><input id="f-${f.id}" type="checkbox" ${checked}/><span>${f.label}</span></label>`;
+  },
+  textarea(f, val) {
+    return `<textarea id="f-${f.id}" rows="${f.rows||3}" placeholder="${f.ph||''}">${_esc(val??'')}</textarea>`;
+  },
+};
+
+
+/* ═══════════════════════════════════════════════════════════════
+   4. BUILD HELPERS  (namespace: Q)
+   ───────────────────────────────────────────────────────────────
+   Reusable GraphQL fragment builders for operation build() fns.
+   ═══════════════════════════════════════════════════════════════ */
+const Q = {
+  /** filter: [{ field: "f", eq: "v" }]  — contacts, dataSets, etc. */
+  arrayFilter: (field, value) =>
+    `filter: [{ field: "${field}", eq: "${value}" }]`,
+
+  /** filter: { field: "f", eq: "v" }  — products (object, not array) */
+  objectFilter: (field, value) =>
+    `filter: { field: "${field}", eq: "${value}" }`,
+
+  /** Returns a pagination args array; pass to .join('\n    ') */
+  pagination: (first, after) => {
+    const a = [`first: ${first || 10}`];
+    if (after) a.push(`after: "${after}"`);
+    return a;
+  },
+
+  /**
+   * Renders attribute lines: { name: "x", value: "y" }
+   * Skips pairs where name or value is empty/undefined.
+   * All values are quoted as strings.
+   */
+  attrLines: (pairs) =>
+    pairs
+      .filter(p => p && p.name && p.value !== undefined && p.value !== '')
+      .map(p => `{ name: "${p.name}", value: "${p.value}" }`)
+      .join('\n        '),
+
+  /**
+   * Like attrLines but preserves numeric types (no quotes for numbers).
+   * Use for product catalog mutations where unitPrice etc. must be numeric.
+   */
+  attrLinesTyped: (pairs) =>
+    pairs
+      .filter(p => p && p.name && p.value !== undefined && p.value !== '')
+      .map(p => {
+        const v = (p.value !== '' && !isNaN(p.value)) ? p.value : `"${p.value}"`;
+        return `{ name: "${p.name}", value: ${v} }`;
+      })
+      .join('\n        '),
+};
+
+
+/* ═══════════════════════════════════════════════════════════════
+   5. OPERATIONS CATALOG
+   ───────────────────────────────────────────────────────────────
+   To add a new operation: append an object to the relevant
+   category's `list` array (or add a new category object).
+   No other code changes needed.
+
+   Operation schema:
+   ┌─────────────────────────────────────────────────────────┐
+   │ id       string   unique identifier                     │
+   │ label    string   sidebar display name                  │
+   │ type     'q'|'m'  query or mutation                     │
+   │ desc     string   shown in operation header             │
+   │ fix?     string   optional "fix applied" note           │
+   │ sections Array<Section>                                 │
+   │ build(vals): string  returns the raw GraphQL string     │
+   └─────────────────────────────────────────────────────────┘
+
+   Section schema: { t: string, i: emoji, f: Array<Field> }
+
+   Field schema:
+   ┌─────────────────────────────────────────────────────────┐
+   │ id       string   unique within the operation           │
+   │ label    string   display label                         │
+   │ type     string   key in FieldRenderers (default: text) │
+   │ req?     bool     shows required star                   │
+   │ def?     any      default value                         │
+   │ ph?      string   placeholder text                      │
+   │ hint?    string   helper text below input               │
+   │ warn?    string   amber warning below input             │
+   │ opts?    string[] options array (select only)           │
+   │ rows?    number   textarea row height                   │
+   └─────────────────────────────────────────────────────────┘
+   ═══════════════════════════════════════════════════════════════ */
+const OPS = [
+
+/* ── Introspection ─────────────────────────────────────────── */
+{ cat:'🔍 Introspection', list:[
+  { id:'info', label:'Schema Info (_info)', type:'q',
+    desc:'Returns API version and subscription info.',
+    sections:[],
+    build: () => `{\n  _info {\n    version\n    subscriptionId\n  }\n}`,
+  },
 ]},
-{cat:'📦 Audience · DataSets',list:[
-  {id:'dataSets',label:'Query DataSets',type:'q',
+
+/* ── Audience · DataSets ───────────────────────────────────── */
+{ cat:'📦 Audience · DataSets', list:[
+  { id:'dataSets', label:'Query DataSets', type:'q',
     desc:'List datasets using filter syntax. The deprecated type: arg is dead on production — use filter instead.',
     fix:'Uses filter: [{ field: "type", eq: "..." }] — confirmed working on live API',
     sections:[
-      {t:'Filter by Type',i:'⚙',f:[
-        {id:'dsType',label:'Dataset Type',type:'select',
-          opts:['(all — no filter)','AUDIENCE','REFERENCE_SET','BEHAVIORAL_ATTRIBUTES','BEHAVIORAL_SCORES'],def:'AUDIENCE'},
-        {id:'first',label:'First (limit)',type:'number',ph:'20',def:'20'},
+      { t:'Filter by Type', i:'⚙', f:[
+        { id:'dsType', label:'Dataset Type', type:'select',
+          opts:['(all — no filter)','AUDIENCE','REFERENCE_SET','BEHAVIORAL_ATTRIBUTES','BEHAVIORAL_SCORES'],
+          def:'AUDIENCE' },
+        { id:'first', label:'First (limit)', type:'number', ph:'20', def:'20' },
       ]},
-      {t:'Response Fields',i:'📋',f:[
-        {id:'incConsent',label:'Include consentGroups',type:'checkbox',def:true},
-        {id:'incAttrs',label:'Include attributes (name, type, category)',type:'checkbox',def:false},
+      { t:'Response Fields', i:'📋', f:[
+        { id:'incConsent', label:'Include consentGroups',               type:'checkbox', def:true },
+        { id:'incAttrs',   label:'Include attributes (name, type, category)', type:'checkbox', def:false },
       ]},
     ],
-    build(f){
-      const args=[];
-      if(f.dsType&&f.dsType!=='(all — no filter)')
-        args.push(`filter: [{ field: "type", eq: "${f.dsType}" }]`);
-      if(f.first) args.push(`first: ${f.first}`);
-      const argsStr=args.length?`(\n    ${args.join('\n    ')}\n  )`:''
-      return`{\n  dataSets${argsStr} {\n    nodes {\n      dataSetId\n      name\n      type${f.incConsent?`\n      consentGroups {\n        id\n        name\n      }`:''}${f.incAttrs?`\n      attributes {\n        name\n        type\n        category\n      }`:''}\n    }\n  }\n}`}
+    build(f) {
+      const args = [];
+      if (f.dsType && f.dsType !== '(all — no filter)')
+        args.push(Q.arrayFilter('type', f.dsType));
+      if (f.first) args.push(`first: ${f.first}`);
+      const a = args.length ? `(\n    ${args.join('\n    ')}\n  )` : '';
+      return `{\n  dataSets${a} {\n    nodes {\n      dataSetId\n      name\n      type`
+        + (f.incConsent ? `\n      consentGroups {\n        id\n        name\n      }` : '')
+        + (f.incAttrs   ? `\n      attributes {\n        name\n        type\n        category\n      }` : '')
+        + `\n    }\n  }\n}`;
+    },
   },
-  {id:'dataSetAttrCats',label:'Query Attribute Categories',type:'q',
+  { id:'dataSetAttrCats', label:'Query Attribute Categories', type:'q',
     desc:'LIVE-VERIFIED: Lists all attribute categories. Correct casing is dataSetAttributeCategories (capital S). Fields are name and icon — the id field does not exist on production.',
     fix:'datasetAttributeCategories (lowercase s) was wrong. id field removed, icon field added.',
     sections:[],
-    build:()=>`{\n  dataSetAttributeCategories {\n    nodes {\n      name\n      icon\n    }\n  }\n}`},
-
-  {id:'contacts',label:'Query Contacts',type:'q',
+    build: () => `{\n  dataSetAttributeCategories {\n    nodes {\n      name\n      icon\n    }\n  }\n}`,
+  },
+  { id:'contacts', label:'Query Contacts', type:'q',
     desc:'Paginated list of contacts. dataSetId is optional. Filter using field/value pairs.',
     sections:[
-      {t:'DataSet',i:'📦',f:[
-        {id:'dsId',label:'DataSet ID',type:'text',ph:'audience-uuid',hint:'Leave blank for default audience'},
+      { t:'DataSet', i:'📦', f:[
+        { id:'dsId', label:'DataSet ID', type:'text', ph:'audience-uuid',
+          hint:'Leave blank for default audience' },
       ]},
-      {t:'Pagination',i:'📄',f:[
-        {id:'first',label:'First (limit)',type:'number',def:'10',ph:'10'},
-        {id:'after',label:'After Cursor',type:'text',ph:'endCursor from previous page'},
+      { t:'Pagination', i:'📄', f:[
+        { id:'first', label:'First (limit)', type:'number', def:'10', ph:'10' },
+        { id:'after', label:'After Cursor',  type:'text',   ph:'endCursor from previous page' },
       ]},
-      {t:'Filter (optional)',i:'⚙',f:[
-        {id:'ff',label:'Filter Field Name',type:'text',ph:'email'},
-        {id:'fv',label:'Filter Value (eq)',type:'text',ph:'user@example.com'},
+      { t:'Filter (optional)', i:'⚙', f:[
+        { id:'ff', label:'Filter Field Name', type:'text', ph:'email' },
+        { id:'fv', label:'Filter Value (eq)', type:'text', ph:'user@example.com' },
       ]},
-      {t:'Response Fields',i:'📋',f:[
-        {id:'incAttrs',label:'Include attributes',type:'checkbox',def:true},
-        {id:'incConsent',label:'Include consent',type:'checkbox',def:false},
-        {id:'incPage',label:'Include pageInfo',type:'checkbox',def:true},
+      { t:'Response Fields', i:'📋', f:[
+        { id:'incAttrs',   label:'Include attributes', type:'checkbox', def:true },
+        { id:'incConsent', label:'Include consent',    type:'checkbox', def:false },
+        { id:'incPage',    label:'Include pageInfo',   type:'checkbox', def:true },
       ]},
     ],
-    build(f){
-      const args=[`first: ${f.first||10}`];
-      if(f.dsId) args.push(`dataSetId: "${f.dsId}"`);
-      if(f.after) args.push(`after: "${f.after}"`);
-      if(f.ff&&f.fv) args.push(`filter: [{ field: "${f.ff}", eq: "${f.fv}" }]`);
-      return`query {\n  contacts(\n    ${args.join('\n    ')}\n  ) {\n    totalCount\n    nodes {\n      ${f.incAttrs?`attributes {\n        name\n        value\n      }`:'attributes { name value }'}${f.incConsent?`\n      consent {\n        channels {\n          channel\n          status\n        }\n      }`:''}\n    }${f.incPage?`\n    pageInfo {\n      hasNextPage\n      endCursor\n    }`:''}\n  }\n}`}
+    build(f) {
+      const args = Q.pagination(f.first, f.after);
+      if (f.dsId) args.splice(1, 0, `dataSetId: "${f.dsId}"`);
+      if (f.ff && f.fv) args.push(Q.arrayFilter(f.ff, f.fv));
+      return `query {\n  contacts(\n    ${args.join('\n    ')}\n  ) {\n    totalCount\n    nodes {\n      `
+        + (f.incAttrs ? `attributes {\n        name\n        value\n      }` : `attributes { name value }`)
+        + (f.incConsent ? `\n      consent {\n        channels {\n          channel\n          status\n        }\n      }` : '')
+        + `\n    }`
+        + (f.incPage ? `\n    pageInfo {\n      hasNextPage\n      endCursor\n    }` : '')
+        + `\n  }\n}`;
+    },
   },
-  {id:'contact',label:'Get Single Contact',type:'q',
+  { id:'contact', label:'Get Single Contact', type:'q',
     desc:'LIVE-VERIFIED: Use contacts with filter + and conditions to find a specific contact. Combine key fields like Unique ID + Email for precise lookup.',
     fix:'contact(contactId) not used in practice — use contacts(filter) with and conditions instead.',
     sections:[
-      {t:'Lookup Filters',i:'🎯',f:[
-        {id:'f1name',label:'Filter Field 1',type:'text',req:true,ph:'Unique ID',def:'Unique ID'},
-        {id:'f1val',label:'Filter Value 1',type:'text',req:true,ph:'VK1418'},
-        {id:'f2name',label:'Filter Field 2 (optional)',type:'text',ph:'Email'},
-        {id:'f2val',label:'Filter Value 2 (optional)',type:'text',ph:'user@example.com'},
+      { t:'Lookup Filters', i:'🎯', f:[
+        { id:'f1name', label:'Filter Field 1',          type:'text', req:true, ph:'Unique ID', def:'Unique ID' },
+        { id:'f1val',  label:'Filter Value 1',          type:'text', req:true, ph:'VK1418' },
+        { id:'f2name', label:'Filter Field 2 (optional)',type:'text', ph:'Email' },
+        { id:'f2val',  label:'Filter Value 2 (optional)',type:'text', ph:'user@example.com' },
       ]},
-      {t:'Response Fields',i:'📋',f:[
-        {id:'selFields',label:'selectByName (comma-separated)',type:'text',def:'First Name,Email,Unique ID',ph:'First Name,Email,Unique ID'},
+      { t:'Response Fields', i:'📋', f:[
+        { id:'selFields', label:'selectByName (comma-separated)', type:'text',
+          def:'First Name,Email,Unique ID', ph:'First Name,Email,Unique ID' },
       ]},
     ],
-    build(f){
-      const n1=f.f1name||'Unique ID', v1=f.f1val||'VALUE1';
-      const fields=(f.selFields||'First Name,Email,Unique ID').split(',').map(s=>s.trim()).filter(Boolean);
-      const sel=fields.map(x=>`"${x}"`).join(', ');
-      let filterBody;
-      if(f.f2name&&f.f2val){
-        filterBody=`filter: [\n      {\n        and: [\n          { field: "${n1}", eq: "${v1}" }\n          { field: "${f.f2name}", eq: "${f.f2val}" }\n        ]\n      }\n    ]`;
-      } else {
-        filterBody=`filter: [{ field: "${n1}", eq: "${v1}" }]`;
-      }
-      return`query {\n  contacts(\n    ${filterBody}\n  ) {\n    nodes {\n      attributes(selectByName: [${sel}]) {\n        name\n        value\n      }\n    }\n    totalCount\n  }\n}`}
+    build(f) {
+      const n1 = f.f1name || 'Unique ID', v1 = f.f1val || 'VALUE1';
+      const sel = (f.selFields || 'First Name,Email,Unique ID')
+        .split(',').map(s => `"${s.trim()}"`).filter(Boolean).join(', ');
+      const filterBody = (f.f2name && f.f2val)
+        ? `filter: [\n      {\n        and: [\n          { field: "${n1}", eq: "${v1}" }\n          { field: "${f.f2name}", eq: "${f.f2val}" }\n        ]\n      }\n    ]`
+        : `filter: [{ field: "${n1}", eq: "${v1}" }]`;
+      return `query {\n  contacts(\n    ${filterBody}\n  ) {\n    nodes {\n      attributes(selectByName: [${sel}]) {\n        name\n        value\n      }\n    }\n    totalCount\n  }\n}`;
+    },
   },
-  {id:'createContacts',label:'Create Contact(s)',type:'m',
+  { id:'createContacts', label:'Create Contact(s)', type:'m',
     desc:'Creates contacts. contactsInput is an array — each needs attributes. Consent is optional.',
     sections:[
-      {t:'DataSet',i:'📦',f:[
-        {id:'dsId',label:'DataSet ID',type:'text',ph:'audience-uuid',hint:'Omit to use default audience'},
+      { t:'DataSet', i:'📦', f:[
+        { id:'dsId', label:'DataSet ID', type:'text', ph:'audience-uuid',
+          hint:'Omit to use default audience' },
       ]},
-      {t:'Contact Attributes',i:'👤',f:[
-        {id:'keyAttr',label:'Key Attribute Name',type:'text',req:true,ph:'Unique ID',hint:'The audience key field'},
-        {id:'keyVal',label:'Key Attribute Value',type:'text',req:true,ph:'user001'},
-        {id:'emailVal',label:'Email Value',type:'text',ph:'user@example.com'},
-        {id:'a3n',label:'Extra Attribute Name',type:'text',ph:'firstName'},
-        {id:'a3v',label:'Extra Attribute Value',type:'text',ph:'Jane'},
+      { t:'Contact Attributes', i:'👤', f:[
+        { id:'keyAttr', label:'Key Attribute Name',  type:'text', req:true, ph:'Unique ID',
+          hint:'The audience key field' },
+        { id:'keyVal',  label:'Key Attribute Value', type:'text', req:true, ph:'user001' },
+        { id:'emailVal',label:'Email Value',         type:'text', ph:'user@example.com' },
+        { id:'a3n',     label:'Extra Attribute Name',type:'text', ph:'firstName' },
+        { id:'a3v',     label:'Extra Attribute Value',type:'text',ph:'Jane' },
       ]},
-      {t:'Consent (optional)',i:'✅',f:[
-        {id:'cgId',label:'Consent Group ID',type:'text',ph:'consent-group-uuid'},
-        {id:'cgStatus',label:'Consent Status',type:'select',opts:['(none)','OPT_IN','OPT_OUT','OPT_IN_UNVERIFIED'],def:'OPT_IN'},
-        {id:'cgChan',label:'Channel',type:'select',opts:['(none)','EMAIL','SMS','WHATSAPP'],def:'EMAIL'},
+      { t:'Consent (optional)', i:'✅', f:[
+        { id:'cgId',     label:'Consent Group ID', type:'text',
+          ph:'consent-group-uuid' },
+        { id:'cgStatus', label:'Consent Status',   type:'select',
+          opts:['(none)','OPT_IN','OPT_OUT','OPT_IN_UNVERIFIED'], def:'OPT_IN' },
+        { id:'cgChan',   label:'Channel',          type:'select',
+          opts:['(none)','EMAIL','SMS','WHATSAPP'], def:'EMAIL' },
       ]},
     ],
-    build(f){
-      const attrs=[];
-      if(f.keyAttr&&f.keyVal) attrs.push(`{ name: "${f.keyAttr}", value: "${f.keyVal}" }`);
-      if(f.emailVal) attrs.push(`{ name: "Email", value: "${f.emailVal}" }`);
-      if(f.a3n&&f.a3v) attrs.push(`{ name: "${f.a3n}", value: "${f.a3v}" }`);
-      let con='';
-      if(f.cgId&&f.cgStatus&&f.cgStatus!=='(none)'){
-        const ch=(f.cgChan&&f.cgChan!=='(none)')?`\n          channels: [{ channel: ${f.cgChan}, status: ${f.cgStatus} }]`:'';
-        con=`\n      consent: {\n        consentGroups: [{\n          consentGroupId: "${f.cgId}"\n          status: ${f.cgStatus}${ch}\n        }]\n      }`;
+    build(f) {
+      const attrs = Q.attrLines([
+        { name: f.keyAttr, value: f.keyVal  },
+        { name: 'Email',   value: f.emailVal },
+        { name: f.a3n,     value: f.a3v     },
+      ]);
+      let con = '';
+      if (f.cgId && f.cgStatus && f.cgStatus !== '(none)') {
+        const ch = (f.cgChan && f.cgChan !== '(none)')
+          ? `\n          channels: [{ channel: ${f.cgChan}, status: ${f.cgStatus} }]` : '';
+        con = `\n      consent: {\n        consentGroups: [{\n          consentGroupId: "${f.cgId}"\n          status: ${f.cgStatus}${ch}\n        }]\n      }`;
       }
-      const da=f.dsId?`dataSetId: "${f.dsId}", `:'';
-      return`mutation {\n  createContacts(\n    ${da}contactsInput: [{\n      attributes: [\n        ${attrs.join('\n        ')}\n      ]${con}\n    }]\n  ) {\n    items {\n      contactKey\n    }\n  }\n}`}
+      const da = f.dsId ? `dataSetId: "${f.dsId}", ` : '';
+      return `mutation {\n  createContacts(\n    ${da}contactsInput: [{\n      attributes: [\n        ${attrs}\n      ]${con}\n    }]\n  ) {\n    items {\n      contactKey\n    }\n  }\n}`;
+    },
   },
-  {id:'updateContacts',label:'Update Contact(s)',type:'m',
-    desc:'LIVE-VERIFIED: Update contact attributes. dataSetId is optional (omit to use default audience). Use contactId (UUID) OR key (your unique ID value) — not both.',
+  { id:'updateContacts', label:'Update Contact(s)', type:'m',
+    desc:'LIVE-VERIFIED: Update contact attributes. dataSetId is optional. Use contactId (UUID) OR key — not both.',
     sections:[
-      {t:'DataSet (optional)',i:'📦',f:[{id:'dsId',label:'DataSet ID',type:'text',ph:'optional — omit for default audience'}]},
-      {t:'Contact Identifier — use ONE',i:'🎯',f:[
-        {id:'contactId',label:'Contact ID (UUID)',type:'text',ph:'2bfcc0ae-6874-4948-bae9-1ce68b47ad43'},
-        {id:'key',label:'Key Value',type:'text',ph:'VK9628  ← use this OR contactId above'},
+      { t:'DataSet (optional)', i:'📦', f:[
+        { id:'dsId', label:'DataSet ID', type:'text', ph:'optional — omit for default audience' },
       ]},
-      {t:'Field to Update',i:'✏️',f:[
-        {id:'attrName',label:'Attribute Name',type:'text',req:true,ph:'Last Name'},
-        {id:'attrVal',label:'New Value',type:'text',req:true,ph:'Kadam'},
+      { t:'Contact Identifier — use ONE', i:'🎯', f:[
+        { id:'contactId', label:'Contact ID (UUID)', type:'text',
+          ph:'2bfcc0ae-6874-4948-bae9-1ce68b47ad43' },
+        { id:'key', label:'Key Value', type:'text',
+          ph:'VK9628  ← use this OR contactId above' },
+      ]},
+      { t:'Field to Update', i:'✏️', f:[
+        { id:'attrName', label:'Attribute Name', type:'text', req:true, ph:'Last Name' },
+        { id:'attrVal',  label:'New Value',      type:'text', req:true, ph:'Kadam' },
       ]},
     ],
-    build(f){
-      const id=f.contactId?`contactId: "${f.contactId}"`:`key: "${f.key||'key-value'}"`;
-      const da=f.dsId?`\n    dataSetId: "${f.dsId}",`:'';
-      return`mutation {\n  updateContacts(${da}\n    updateContactInputs: [{\n      ${id}\n      to: {\n        attributes: [{\n          name: "${f.attrName||'Last Name'}"\n          value: "${f.attrVal||'newValue'}"\n        }]\n      }\n    }]\n  ) {\n    modifiedCount\n  }\n}`}
+    build(f) {
+      const id  = f.contactId ? `contactId: "${f.contactId}"` : `key: "${f.key || 'key-value'}"`;
+      const da  = f.dsId ? `\n    dataSetId: "${f.dsId}",` : '';
+      return `mutation {\n  updateContacts(${da}\n    updateContactInputs: [{\n      ${id}\n      to: {\n        attributes: [{\n          name: "${f.attrName || 'Last Name'}"\n          value: "${f.attrVal || 'newValue'}"\n        }]\n      }\n    }]\n  ) {\n    modifiedCount\n  }\n}`;
+    },
   },
-  {id:'deleteContacts',label:'Delete Contact(s)',type:'m',
+  { id:'deleteContacts', label:'Delete Contact(s)', type:'m',
     desc:'LIVE-VERIFIED ⚠️ Irreversible. Three targeting options: keyList (by key value), contactIdList (by UUID), or addressableList (by email/phone). deleteReason required.',
     sections:[
-      {t:'⚠️ Irreversible',i:'🗑',f:[
-        {id:'targetType',label:'Target By',type:'select',opts:['keyList','contactIdList','addressableList'],def:'keyList'},
-        {id:'keyVal',label:'Key Value (for keyList)',type:'text',ph:'VK9628'},
-        {id:'contactId',label:'Contact UUID (for contactIdList)',type:'text',ph:'2bfcc0ae-...'},
-        {id:'addrField',label:'Address Field (for addressableList)',type:'text',ph:'Email'},
-        {id:'addrVal',label:'Address Value (for addressableList)',type:'text',ph:'user@example.com'},
-        {id:'reason',label:'Delete Reason',type:'select',
-          opts:['USER_REQUEST','RIGHT_TO_BE_FORGOTTEN','ADMIN_ACTION'],def:'USER_REQUEST'},
+      { t:'⚠️ Irreversible', i:'🗑', f:[
+        { id:'targetType', label:'Target By', type:'select',
+          opts:['keyList','contactIdList','addressableList'], def:'keyList' },
+        { id:'keyVal',    label:'Key Value (for keyList)',             type:'text', ph:'VK9628' },
+        { id:'contactId', label:'Contact UUID (for contactIdList)',    type:'text', ph:'2bfcc0ae-...' },
+        { id:'addrField', label:'Address Field (for addressableList)', type:'text', ph:'Email' },
+        { id:'addrVal',   label:'Address Value (for addressableList)', type:'text', ph:'user@example.com' },
+        { id:'reason',    label:'Delete Reason', type:'select',
+          opts:['USER_REQUEST','RIGHT_TO_BE_FORGOTTEN','ADMIN_ACTION'], def:'USER_REQUEST' },
       ]},
     ],
-    build(f){
-      const t=f.targetType||'keyList';
-      let target;
-      if(t==='keyList') target=`keyList: ["${f.keyVal||'VK9628'}"]`;
-      else if(t==='contactIdList') target=`contactIdList: ["${f.contactId||'REPLACE_UUID'}"]`;
-      else target=`addressableList: [{ field: "${f.addrField||'Email'}", eq: "${f.addrVal||'user@example.com'}" }]`;
-      return`mutation {\n  deleteContacts(where: {\n    ${target}\n    deleteReason: ${f.reason||'USER_REQUEST'}\n  }) {\n    deletedCount\n  }\n}`}
+    build(f) {
+      const t = f.targetType || 'keyList';
+      const target = t === 'keyList'
+        ? `keyList: ["${f.keyVal || 'VK9628'}"]`
+        : t === 'contactIdList'
+        ? `contactIdList: ["${f.contactId || 'REPLACE_UUID'}"]`
+        : `addressableList: [{ field: "${f.addrField || 'Email'}", eq: "${f.addrVal || 'user@example.com'}" }]`;
+      return `mutation {\n  deleteContacts(where: {\n    ${target}\n    deleteReason: ${f.reason || 'USER_REQUEST'}\n  }) {\n    deletedCount\n  }\n}`;
+    },
   },
 ]},
-{cat:'📥 Import Jobs',list:[
-  {id:'createImportJob',label:'Create Import Job',type:'m',
+
+/* ── Import Jobs ───────────────────────────────────────────── */
+{ cat:'📥 Import Jobs', list:[
+  { id:'createImportJob', label:'Create Import Job', type:'m',
     desc:'DOCS-VERIFIED: Import contacts from a CSV/TSV file on the Acoustic SFTP server. Uses GraphQL variables (not inline args). fileLocation requires type:SFTP + filename + folder. mappings use columnIndex + attributeName.',
     fix:'autoMap removed. fileLocation uses {type:SFTP,filename,folder} — not key: path. Must use GraphQL variables pattern.',
     sections:[
-      {t:'Job Settings',i:'⚙️',f:[
-        {id:'dsId',label:'DataSet ID',type:'text',ph:'optional — omit for default dataset'},
-        {id:'jobName',label:'Job Name',type:'text',req:true,ph:'Import contacts 2025-03'},
-        {id:'importType',label:'Import Type',type:'select',opts:['ADD_UPDATE'],def:'ADD_UPDATE'},
-        {id:'createSegment',label:'Create Segment?',type:'select',opts:['false','true'],def:'false'},
+      { t:'Job Settings', i:'⚙️', f:[
+        { id:'dsId',          label:'DataSet ID',     type:'text',   ph:'optional — omit for default dataset' },
+        { id:'jobName',       label:'Job Name',       type:'text',   req:true, ph:'Import contacts 2025-03' },
+        { id:'importType',    label:'Import Type',    type:'select', opts:['ADD_UPDATE'], def:'ADD_UPDATE' },
+        { id:'createSegment', label:'Create Segment?',type:'select', opts:['false','true'], def:'false' },
       ]},
-      {t:'File Location (SFTP)',i:'📁',f:[
-        {id:'filename',label:'Filename',type:'text',req:true,ph:'contacts.csv'},
-        {id:'folder',label:'Folder (optional)',type:'text',ph:'contacts'},
-        {id:'delimiter',label:'Delimiter',type:'select',opts:[',','\t','|'],def:','},
-        {id:'skipFirstRow',label:'Skip Header Row?',type:'select',opts:['true','false'],def:'true'},
+      { t:'File Location (SFTP)', i:'📁', f:[
+        { id:'filename',     label:'Filename',          type:'text',   req:true, ph:'contacts.csv' },
+        { id:'folder',       label:'Folder (optional)', type:'text',   ph:'contacts' },
+        { id:'delimiter',    label:'Delimiter',         type:'select', opts:[',','\t','|'], def:',' },
+        { id:'skipFirstRow', label:'Skip Header Row?',  type:'select', opts:['true','false'], def:'true' },
       ]},
     ],
-    build(f){
-      const dsId=f.dsId||'REPLACE_AUDIENCE_ID';
-      const jobName=f.jobName||'Import contacts';
-      const importType=f.importType||'ADD_UPDATE';
-      const createSeg=f.createSegment||'false';
-      const filename=f.filename||'contacts.csv';
-      const folder=f.folder;
-      const delim=f.delimiter||',';
-      const skip=f.skipFirstRow||'true';
-      const delimEsc=delim==='\t'?'\\t':delim;
-      const folderLine=folder?`\n      "folder": "${folder}",`:'';
-      return`mutation ($importInput: ImportInput!) {\n  createImportJob(importInput: $importInput) {\n    id\n  }\n}\n\n# Variables:\n# {\n#   "importInput": {\n#     "dataSetId": "${dsId}",\n#     "jobName": "${jobName}",\n#     "importType": "${importType}",\n#     "createSegment": ${createSeg},\n#     "fileFormat": "DELIMITED",\n#     "delimiter": "${delimEsc}",\n#     "skipFirstRow": ${skip},\n#     "fileLocation": {\n#       "type": "SFTP",\n#       "filename": "${filename}",${folderLine}\n#     },\n#     "mappings": [\n#       { "columnIndex": 1, "attributeName": "Contact Key" },\n#       { "columnIndex": 2, "attributeName": "Email" },\n#       { "columnIndex": 3, "attributeName": "First Name" }\n#     ]\n#   }\n# }`}
+    build(f) {
+      const delimEsc   = (f.delimiter || ',') === '\t' ? '\\t' : (f.delimiter || ',');
+      const folderLine = f.folder ? `\n#       "folder": "${f.folder}",` : '';
+      return `mutation ($importInput: ImportInput!) {\n  createImportJob(importInput: $importInput) {\n    id\n  }\n}\n\n# Variables:\n# {\n#   "importInput": {\n#     "dataSetId": "${f.dsId || 'REPLACE_AUDIENCE_ID'}",\n#     "jobName": "${f.jobName || 'Import contacts'}",\n#     "importType": "${f.importType || 'ADD_UPDATE'}",\n#     "createSegment": ${f.createSegment || 'false'},\n#     "fileFormat": "DELIMITED",\n#     "delimiter": "${delimEsc}",\n#     "skipFirstRow": ${f.skipFirstRow || 'true'},\n#     "fileLocation": {\n#       "type": "SFTP",\n#       "filename": "${f.filename || 'contacts.csv'}",${folderLine}\n#     },\n#     "mappings": [\n#       { "columnIndex": 1, "attributeName": "Contact Key" },\n#       { "columnIndex": 2, "attributeName": "Email" },\n#       { "columnIndex": 3, "attributeName": "First Name" }\n#     ]\n#   }\n# }`;
+    },
   },
-  {id:'dataJob',label:'Get Import Job Status',type:'q',
+  { id:'dataJob', label:'Get Import Job Status', type:'q',
     desc:'LIVE-VERIFIED: Check status of a data job by ID. No row counts in tracking — monitor via status/startedAt/endedAt/errors.',
-    sections:[
-      {t:'Job',i:'📋',f:[{id:'jobId',label:'Job ID',type:'text',req:true,ph:'job-uuid'}]},
-    ],
     fix:'DataJob.tracking is JobTracking (createdAt/lastModifiedAt only) — no row counts. Use startedAt/endedAt/errors instead.',
-    build(f){return`{\n  dataJob(id: "${f.jobId||'job-uuid'}") {\n    id\n    name\n    type\n    status\n    startedAt\n    endedAt\n    errors {\n      code\n      message\n    }\n  }\n}`}
+    sections:[
+      { t:'Job', i:'📋', f:[
+        { id:'jobId', label:'Job ID', type:'text', req:true, ph:'job-uuid' },
+      ]},
+    ],
+    build(f) {
+      return `{\n  dataJob(id: "${f.jobId || 'job-uuid'}") {\n    id\n    name\n    type\n    status\n    startedAt\n    endedAt\n    errors {\n      code\n      message\n    }\n  }\n}`;
+    },
   },
 ]},
-{cat:'🔗 Reference Sets',list:[
-  {id:'refSets',label:'Query Reference Sets',type:'q',
+
+/* ── Reference Sets ────────────────────────────────────────── */
+{ cat:'🔗 Reference Sets', list:[
+  { id:'refSets', label:'Query Reference Sets', type:'q',
     desc:'List all reference sets using filter syntax.',
     fix:'Uses filter syntax — same fix as dataSets',
     sections:[],
-    build:()=>`{\n  dataSets(filter: [{ field: "type", eq: "REFERENCE_SET" }], first: 50) {\n    nodes {\n      dataSetId\n      name\n      type\n    }\n  }\n}`},
-  {id:'refSetRecords',label:'Get Reference Set Records',type:'q',
+    build: () => `{\n  dataSets(filter: [{ field: "type", eq: "REFERENCE_SET" }], first: 50) {\n    nodes {\n      dataSetId\n      name\n      type\n    }\n  }\n}`,
+  },
+  { id:'refSetRecords', label:'Get Reference Set Records', type:'q',
     desc:'Fetch records from a reference set. Returns ReferenceSetRecordConnection. Pagination via first/last args.',
     fix:'LIVE-VERIFIED: key field removed (does not exist on live API). Valid fields: dataSetId, attributes { name value }.',
     sections:[
-      {t:'Reference Set',i:'🎯',f:[
-        {id:'dsId',label:'DataSet ID',type:'text',req:true,ph:'refset-uuid'},
-        {id:'first',label:'First (limit)',type:'number',def:'10',ph:'10'},
+      { t:'Reference Set', i:'🎯', f:[
+        { id:'dsId',  label:'DataSet ID',    type:'text',   req:true, ph:'refset-uuid' },
+        { id:'first', label:'First (limit)', type:'number', def:'10',  ph:'10' },
       ]},
     ],
-    build(f){return`{\n  referenceSetRecords(\n    dataSetId: "${f.dsId||'refset-uuid'}"\n    first: ${f.first||10}\n  ) {\n    nodes {\n      dataSetId\n      attributes {\n        name\n        value\n      }\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n  }\n}`}
+    build(f) {
+      return `{\n  referenceSetRecords(\n    dataSetId: "${f.dsId || 'refset-uuid'}"\n    first: ${f.first || 10}\n  ) {\n    nodes {\n      dataSetId\n      attributes {\n        name\n        value\n      }\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n  }\n}`;
+    },
   },
-  {id:'addRefSetAssoc',label:'Connect Reference Set to Audience',type:'m',
+  { id:'addRefSetAssoc', label:'Connect Reference Set to Audience', type:'m',
     desc:'addReferenceSetAssociation — links a reference set (from) to an audience (to).',
+    fix:'AddReferenceSetAssociationResponse type not defined in schema — use minimal selection.',
     sections:[
-      {t:'Association',i:'🔗',f:[
-        {id:'toId',label:'Audience DataSet ID (to)',type:'text',req:true,ph:'audience-uuid'},
-        {id:'fromId',label:'Reference Set DataSet ID (from)',type:'text',req:true,ph:'refset-uuid'},
-        {id:'toField',label:'Audience Join Field',type:'text',req:true,ph:'contactId'},
-        {id:'fromField',label:'Reference Set Join Field',type:'text',req:true,ph:'contactId'},
+      { t:'Association', i:'🔗', f:[
+        { id:'toId',     label:'Audience DataSet ID (to)',        type:'text', req:true, ph:'audience-uuid' },
+        { id:'fromId',   label:'Reference Set DataSet ID (from)', type:'text', req:true, ph:'refset-uuid' },
+        { id:'toField',  label:'Audience Join Field',             type:'text', req:true, ph:'contactId' },
+        { id:'fromField',label:'Reference Set Join Field',        type:'text', req:true, ph:'contactId' },
       ]},
     ],
-    fix:'AddReferenceSetAssociationResponse type not defined in schema — response fields may vary. Use minimal selection.',
-    build(f){return`mutation {\n  addReferenceSetAssociation(dataSetAssociation: {\n    to: "${f.toId||'audience-uuid'}"\n    from: "${f.fromId||'refset-uuid'}"\n    mappings: [{\n      to: "${f.toField||'contactId'}"\n      from: "${f.fromField||'contactId'}"\n    }]\n  }) {\n    to { dataSetId name }\n    from { dataSetId name }\n  }\n}`}
+    build(f) {
+      return `mutation {\n  addReferenceSetAssociation(dataSetAssociation: {\n    to: "${f.toId || 'audience-uuid'}"\n    from: "${f.fromId || 'refset-uuid'}"\n    mappings: [{\n      to: "${f.toField || 'contactId'}"\n      from: "${f.fromField || 'contactId'}"\n    }]\n  }) {\n    to { dataSetId name }\n    from { dataSetId name }\n  }\n}`;
+    },
   },
-  {id:'delRefSetAssoc',label:'Disconnect Reference Set',type:'m',
+  { id:'delRefSetAssoc', label:'Disconnect Reference Set', type:'m',
     desc:'deleteReferenceSetAssociation — removes the link between a reference set and audience.',
+    fix:'DeleteReferenceSetAssociationResponse type not defined in schema — use minimal selection.',
     sections:[
-      {t:'Disconnect',i:'🔓',f:[
-        {id:'toId',label:'Audience DataSet ID (to)',type:'text',req:true,ph:'audience-uuid'},
-        {id:'fromId',label:'Reference Set DataSet ID (from)',type:'text',req:true,ph:'refset-uuid'},
+      { t:'Disconnect', i:'🔓', f:[
+        { id:'toId',   label:'Audience DataSet ID (to)',        type:'text', req:true, ph:'audience-uuid' },
+        { id:'fromId', label:'Reference Set DataSet ID (from)', type:'text', req:true, ph:'refset-uuid' },
       ]},
     ],
-    fix:'DeleteReferenceSetAssociationResponse type not defined in schema — use minimal selection.',
-    build(f){return`mutation {\n  deleteReferenceSetAssociation(\n    to: "${f.toId||'audience-uuid'}"\n    from: "${f.fromId||'refset-uuid'}"\n  ) {\n    to { dataSetId }\n    from { dataSetId }\n  }\n}`}
+    build(f) {
+      return `mutation {\n  deleteReferenceSetAssociation(\n    to: "${f.toId || 'audience-uuid'}"\n    from: "${f.fromId || 'refset-uuid'}"\n  ) {\n    to { dataSetId }\n    from { dataSetId }\n  }\n}`;
+    },
   },
 ]},
-{cat:'📅 Activity Events',list:[
-  {id:'activityEvents',label:'Query Activity Events',type:'q',
+
+/* ── Activity Events ───────────────────────────────────────── */
+{ cat:'📅 Activity Events', list:[
+  { id:'activityEvents', label:'Query Activity Events', type:'q',
     desc:'Paginated activity events — EMAIL, SMS, CONSENT, FORM_SUBMISSION, etc.',
     sections:[
-      {t:'Pagination',i:'📄',f:[
-        {id:'first',label:'First (limit)',type:'number',def:'10',ph:'10'},
-        {id:'after',label:'After Cursor',type:'text',ph:'endCursor'},
+      { t:'Pagination', i:'📄', f:[
+        { id:'first', label:'First (limit)', type:'number', def:'10', ph:'10' },
+        { id:'after', label:'After Cursor',  type:'text',   ph:'endCursor' },
       ]},
-      {t:'Filter (optional)',i:'⚙',f:[
-        {id:'ff',label:'Filter Field',type:'text',ph:'contactId'},
-        {id:'fv',label:'Filter Value',type:'text',ph:'contact-uuid'},
+      { t:'Filter (optional)', i:'⚙', f:[
+        { id:'ff', label:'Filter Field', type:'text', ph:'contactId' },
+        { id:'fv', label:'Filter Value', type:'text', ph:'contact-uuid' },
       ]},
     ],
-    build(f){
-      const args=[`first: ${f.first||10}`];
-      if(f.after) args.push(`after: "${f.after}"`);
-      if(f.ff&&f.fv) args.push(`filter: [{ field: "${f.ff}", eq: "${f.fv}" }]`);
-      return`{\n  activityEvents(\n    ${args.join('\n    ')}\n  ) {\n    nodes {\n      eventId\n      eventCategory\n      eventType\n      eventDate\n      contactId\n      dataSetId\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n  }\n}`}
+    build(f) {
+      const args = Q.pagination(f.first, f.after);
+      if (f.ff && f.fv) args.push(Q.arrayFilter(f.ff, f.fv));
+      return `{\n  activityEvents(\n    ${args.join('\n    ')}\n  ) {\n    nodes {\n      eventId\n      eventCategory\n      eventType\n      eventDate\n      contactId\n      dataSetId\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n  }\n}`;
+    },
   },
-  {id:'consentEvents',label:'Query Consent Events',type:'q',
+  { id:'consentEvents', label:'Query Consent Events', type:'q',
     desc:'Consent-specific events (opt-ins, opt-outs).',
     sections:[
-      {t:'Pagination',i:'📄',f:[{id:'first',label:'First',type:'number',def:'10',ph:'10'}]},
+      { t:'Pagination', i:'📄', f:[
+        { id:'first', label:'First', type:'number', def:'10', ph:'10' },
+      ]},
     ],
-    build(f){return`{\n  consentEvents(first: ${f.first||10}) {\n    nodes {\n      eventId\n      eventCategory\n      eventType\n      eventDate\n      contactId\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n  }\n}`}
+    build(f) {
+      return `{\n  consentEvents(first: ${f.first || 10}) {\n    nodes {\n      eventId\n      eventCategory\n      eventType\n      eventDate\n      contactId\n      consentGroupId\n      channel\n      status\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n  }\n}`;
+    },
   },
 ]},
-{cat:'⚖️ GDPR / Privacy',list:[
-  {id:'roaJob',label:'Right of Access Job',type:'m',
+
+/* ── GDPR / Privacy ────────────────────────────────────────── */
+{ cat:'⚖️ GDPR / Privacy', list:[
+  { id:'roaJob', label:'Right of Access Job', type:'m',
     desc:'createRightOfAccessJob — GDPR data export for a contact.',
     sections:[
-      {t:'Contact',i:'👤',f:[
-        {id:'contactId',label:'Contact ID',type:'text',ph:'contact-uuid'},
-        {id:'key',label:'Key Value',type:'text',ph:'alternative to Contact ID'},
+      { t:'Contact', i:'👤', f:[
+        { id:'contactId', label:'Contact ID', type:'text', ph:'contact-uuid' },
+        { id:'key',       label:'Key Value',  type:'text', ph:'alternative to Contact ID' },
       ]},
     ],
-    build(f){
-      const id=f.contactId?`contactIds: ["${f.contactId}"]`:`contactKeys: ["${f.key||'key-value'}"]`;
-      return`mutation {\n  createRightOfAccessJob(\n    ${id}\n    sendNotifications: true\n  ) {\n    jobId\n    status\n  }\n}`}
+    build(f) {
+      const id = f.contactId
+        ? `contactIds: ["${f.contactId}"]`
+        : `contactKeys: ["${f.key || 'key-value'}"]`;
+      return `mutation {\n  createRightOfAccessJob(\n    ${id}\n    sendNotifications: true\n  ) {\n    jobId\n  }\n}`;
+    },
   },
-  {id:'rtbfJob',label:'Right to be Forgotten Job',type:'m',
+  { id:'rtbfJob', label:'Right to be Forgotten Job', type:'m',
     desc:'⚠️ createRightToBeForgottenJob — permanently erases a contact from all Acoustic services.',
     sections:[
-      {t:'⚠️ Irreversible Erasure',i:'🗑',f:[
-        {id:'contactId',label:'Contact ID',type:'text',ph:'contact-uuid'},
-        {id:'key',label:'Key Value',type:'text',ph:'alternative to Contact ID'},
+      { t:'⚠️ Irreversible Erasure', i:'🗑', f:[
+        { id:'contactId', label:'Contact ID', type:'text', ph:'contact-uuid' },
+        { id:'key',       label:'Key Value',  type:'text', ph:'alternative to Contact ID' },
       ]},
     ],
-    build(f){
-      const id=f.contactId?`contactIds: ["${f.contactId}"]`:`contactKeys: ["${f.key||'key-value'}"]`;
-      return`mutation {\n  createRightToBeForgottenJob(\n    ${id}\n    sendNotifications: true\n  ) {\n    jobId\n    status\n  }\n}`}
+    build(f) {
+      const id = f.contactId
+        ? `contactIds: ["${f.contactId}"]`
+        : `contactKeys: ["${f.key || 'key-value'}"]`;
+      return `mutation {\n  createRightToBeForgottenJob(\n    ${id}\n    sendNotifications: true\n  ) {\n    jobId\n  }\n}`;
+    },
   },
 ]},
-{cat:'🛍️ Product Catalog',list:[
 
-  {id:'products',label:'Query Products',type:'q',
-    desc:'LIVE-VERIFIED: List products. filter is an OBJECT not array. Supports first/last, orderBy, selectByName, filter. metadata fields are optional.',
+/* ── Product Catalog ───────────────────────────────────────── */
+{ cat:'🛍️ Product Catalog', list:[
+  { id:'products', label:'Query Products', type:'q',
+    desc:'LIVE-VERIFIED: List products. filter is an OBJECT not array. Supports first/last, orderBy, selectByName, filter.',
     fix:'filter: [{ ... }] (array) is wrong — use filter: { field: "...", eq: "..." } (plain object).',
     sections:[
-      {t:'Pagination & Sort',i:'📄',f:[
-        {id:'first',label:'First (limit)',type:'text',ph:'10'},
-        {id:'orderField',label:'Order By Field',type:'text',ph:'productName'},
-        {id:'orderDir',label:'Order Direction',type:'select',opts:['ASC','DESC'],def:'ASC'},
+      { t:'Pagination & Sort', i:'📄', f:[
+        { id:'first',      label:'First (limit)',   type:'text',   ph:'10' },
+        { id:'orderField', label:'Order By Field',  type:'text',   ph:'productName' },
+        { id:'orderDir',   label:'Order Direction', type:'select', opts:['ASC','DESC'], def:'ASC' },
       ]},
-      {t:'Filter (optional — object, not array)',i:'🔍',f:[
-        {id:'filterField',label:'Filter Field',type:'text',ph:'productId'},
-        {id:'filterVal',label:'Filter Value (eq)',type:'text',ph:'21'},
+      { t:'Filter (optional — object, not array)', i:'🔍', f:[
+        { id:'filterField', label:'Filter Field',      type:'text', ph:'productId' },
+        { id:'filterVal',   label:'Filter Value (eq)', type:'text', ph:'21' },
       ]},
-      {t:'Select Fields (optional)',i:'📋',f:[
-        {id:'selectFields',label:'selectByName (comma-separated)',type:'text',ph:'productId, productName, unitPrice'},
+      { t:'Select Fields (optional)', i:'📋', f:[
+        { id:'selectFields', label:'selectByName (comma-separated)', type:'text',
+          ph:'productId, productName, unitPrice' },
       ]},
     ],
-    build(f){
-      const args=[];
-      if(f.first) args.push(`first: ${f.first}`);
-      if(f.orderField) args.push(`orderBy: { field: "${f.orderField}", sort: ${f.orderDir||'ASC'} }`);
-      if(f.filterField) args.push(`filter: { field: "${f.filterField}", eq: "${f.filterVal||'value'}" }`);
-      if(f.selectFields) args.push(`selectByName: [${f.selectFields.split(',').map(s=>`"${s.trim()}"`).join(', ')}]`);
-      const argsStr=args.length?`(\n    ${args.join('\n    ')}\n  )`:'';
-      return`query {\n  products${argsStr} {\n    nodes {\n      attributes {\n        name\n        value\n        type\n      }\n    }\n  }\n}`}
+    build(f) {
+      const args = [];
+      if (f.first)        args.push(`first: ${f.first}`);
+      if (f.orderField)   args.push(`orderBy: { field: "${f.orderField}", sort: ${f.orderDir || 'ASC'} }`);
+      if (f.filterField)  args.push(Q.objectFilter(f.filterField, f.filterVal || 'value'));
+      if (f.selectFields) args.push(`selectByName: [${f.selectFields.split(',').map(s => `"${s.trim()}"`).join(', ')}]`);
+      const a = args.length ? `(\n    ${args.join('\n    ')}\n  )` : '';
+      return `query {\n  products${a} {\n    nodes {\n      attributes {\n        name\n        value\n        type\n      }\n    }\n  }\n}`;
+    },
   },
-  {id:'productById',label:'Query Product by ID',type:'q',
+  { id:'productById', label:'Query Product by ID', type:'q',
     desc:'DOCS-VERIFIED: Get a single product by its productId value using the products query with a filter.',
     sections:[
-      {t:'Product',i:'🔍',f:[
-        {id:'productId',label:'Product ID',type:'text',req:true,ph:'AC-DBL-BRSH-6'},
+      { t:'Product', i:'🔍', f:[
+        { id:'productId', label:'Product ID', type:'text', req:true, ph:'AC-DBL-BRSH-6' },
       ]},
     ],
-    build(f){
-      const pid=f.productId||'REPLACE_PRODUCT_ID';
-      return`{\n  products(\n    filter: { field: "productId", eq: "${pid}" }\n  ) {\n    nodes {\n      attributes { name value type }\n    }\n  }\n}`}
+    build(f) {
+      return `{\n  products(\n    ${Q.objectFilter('productId', f.productId || 'REPLACE_PRODUCT_ID')}\n  ) {\n    nodes {\n      attributes { name value type }\n    }\n  }\n}`;
+    },
   },
-
-  {id:'createProduct',label:'Add a Product',type:'m',
+  { id:'createProduct', label:'Add a Product', type:'m',
     desc:'DOCS-VERIFIED: Add a single product to the product catalog. productId is the key field and must be unique.',
     sections:[
-      {t:'Product Attributes',i:'📦',f:[
-        {id:'productId',label:'Product ID (key)',type:'text',req:true,ph:'AC-NEW-001'},
-        {id:'productName',label:'Product Name',type:'text',ph:'My New Product'},
-        {id:'unitPrice',label:'Unit Price',type:'text',ph:'29.99'},
-        {id:'currency',label:'Currency',type:'text',ph:'USD'},
-        {id:'category',label:'Category',type:'text',ph:'Electronics'},
+      { t:'Product Attributes', i:'📦', f:[
+        { id:'productId',   label:'Product ID (key)', type:'text', req:true, ph:'AC-NEW-001' },
+        { id:'productName', label:'Product Name',     type:'text', ph:'My New Product' },
+        { id:'unitPrice',   label:'Unit Price',       type:'text', ph:'29.99' },
+        { id:'currency',    label:'Currency',         type:'text', ph:'USD' },
+        { id:'category',    label:'Category',         type:'text', ph:'Electronics' },
       ]},
     ],
-    build(f){
-      const pid=f.productId||'PRODUCT-ID';
-      let attrs=`{ name: "productId", value: "${pid}" }`;
-      if(f.productName) attrs+=`\n        { name: "productName", value: "${f.productName}" }`;
-      if(f.unitPrice) attrs+=`\n        { name: "unitPrice", value: ${f.unitPrice} }`;
-      if(f.currency) attrs+=`\n        { name: "currency", value: "${f.currency}" }`;
-      if(f.category) attrs+=`\n        { name: "category", value: "${f.category}" }`;
-      return`mutation {\n  createProduct(\n    productInput: {\n      attributes: [\n        ${attrs}\n      ]\n    }\n  ) {\n    attributes { name value type }\n  }\n}`}
+    build(f) {
+      const attrs = Q.attrLinesTyped([
+        { name:'productId',   value: f.productId },
+        { name:'productName', value: f.productName },
+        { name:'unitPrice',   value: f.unitPrice },
+        { name:'currency',    value: f.currency },
+        { name:'category',    value: f.category },
+      ]);
+      return `mutation {\n  createProduct(\n    productInput: {\n      attributes: [\n        ${attrs}\n      ]\n    }\n  ) {\n    attributes { name value type }\n  }\n}`;
+    },
   },
-
-  {id:'updateProduct',label:'Update a Product',type:'m',
-    desc:'LIVE-VERIFIED: Update product attributes. Top-level args are productId and updatedProduct: { attributes: [...] }. Returns modifiedCount.',
-    fix:'where: { productId } + to: { attributes } was wrong. Correct: updateProduct(productId: "...", updatedProduct: { attributes: [...] }) { modifiedCount }',
+  { id:'updateProduct', label:'Update a Product', type:'m',
+    desc:'LIVE-VERIFIED: Update product attributes. Returns modifiedCount.',
+    fix:'Correct signature: updateProduct(productId, updatedProduct) — NOT where/to. Returns modifiedCount, NOT attributes.',
     sections:[
-      {t:'Target',i:'🎯',f:[
-        {id:'productId',label:'Product ID',type:'text',req:true,ph:'772'},
+      { t:'Target', i:'🎯', f:[
+        { id:'productId', label:'Product ID', type:'text', req:true, ph:'772' },
       ]},
-      {t:'Update',i:'✏️',f:[
-        {id:'attrName',label:'Attribute to Update',type:'text',req:true,ph:'unitPrice'},
-        {id:'attrVal',label:'New Value',type:'text',req:true,ph:'529.99'},
-        {id:'attrName2',label:'Attribute 2 (optional)',type:'text',ph:'availability'},
-        {id:'attrVal2',label:'Value 2 (optional)',type:'text',ph:'In stock'},
+      { t:'Update', i:'✏️', f:[
+        { id:'attrName',  label:'Attribute to Update',    type:'text', req:true, ph:'unitPrice' },
+        { id:'attrVal',   label:'New Value',              type:'text', req:true, ph:'529.99' },
+        { id:'attrName2', label:'Attribute 2 (optional)', type:'text', ph:'availability' },
+        { id:'attrVal2',  label:'Value 2 (optional)',     type:'text', ph:'In stock' },
       ]},
     ],
-    build(f){
-      const pid=f.productId||'REPLACE_PRODUCT_ID';
-      let attrs=`{ name: "${f.attrName||'unitPrice'}", value: ${isNaN(f.attrVal)?`"${f.attrVal||'val'}"`:f.attrVal} }`;
-      if(f.attrName2) attrs+=`\n        { name: "${f.attrName2}", value: "${f.attrVal2||''}" }`;
-      return`mutation {\n  updateProduct(\n    productId: "${pid}"\n    updatedProduct: {\n      attributes: [\n        ${attrs}\n      ]\n    }\n  ) {\n    modifiedCount\n  }\n}`}
+    build(f) {
+      const attrs = Q.attrLinesTyped([
+        { name: f.attrName  || 'unitPrice', value: f.attrVal  || 'val' },
+        { name: f.attrName2,                value: f.attrVal2 },
+      ]);
+      return `mutation {\n  updateProduct(\n    productId: "${f.productId || 'REPLACE_PRODUCT_ID'}"\n    updatedProduct: {\n      attributes: [\n        ${attrs}\n      ]\n    }\n  ) {\n    modifiedCount\n  }\n}`;
+    },
   },
-
-  {id:'deleteProducts',label:'Delete Products',type:'m',
+  { id:'deleteProducts', label:'Delete Products', type:'m',
     desc:'LIVE-VERIFIED ⚠️ Permanently deletes products. productIds is a TOP-LEVEL arg — not inside where: {}.',
     fix:'where: { productIds: [...] } was wrong. Correct: deleteProducts(productIds: [...]) { deletedCount }',
     sections:[
-      {t:'⚠️ Irreversible',i:'🗑',f:[
-        {id:'productIds',label:'Product IDs (comma-separated)',type:'text',req:true,ph:'SAX-004, TRP-019, FLT-007'},
+      { t:'⚠️ Irreversible', i:'🗑', f:[
+        { id:'productIds', label:'Product IDs (comma-separated)', type:'text', req:true,
+          ph:'SAX-004, TRP-019, FLT-007' },
       ]},
     ],
-    build(f){
-      const ids=(f.productIds||'REPLACE_PRODUCT_ID').split(',').map(s=>`"${s.trim()}"`).join(', ');
-      return`mutation {\n  deleteProducts(productIds: [${ids}]) {\n    deletedCount\n  }\n}`}
+    build(f) {
+      const ids = (f.productIds || 'REPLACE_PRODUCT_ID')
+        .split(',').map(s => `"${s.trim()}"`).join(', ');
+      return `mutation {\n  deleteProducts(productIds: [${ids}]) {\n    deletedCount\n  }\n}`;
+    },
   },
-
-  {id:'createProductAttr',label:'Add Custom Attribute to Product Catalog',type:'m',
-    desc:'LIVE-VERIFIED: Add custom attributes to the product catalog schema via updateDataSet. Pass the catalog dataSetId in where, and list new attributes in to.attributes.create.',
-    fix:'createDataSetAttribute with dataSetType:PRODUCT_CATALOG was wrong. Use updateDataSet(where: { dataSetId }, to: { attributes: { create: [...] } }).',
+  { id:'createProductAttr', label:'Add Custom Attribute to Product Catalog', type:'m',
+    desc:'LIVE-VERIFIED: Add custom attributes to the product catalog schema via updateDataSet.',
+    fix:'createDataSetAttribute with dataSetType:PRODUCT_CATALOG was wrong. Use updateDataSet with attributes.create.',
     sections:[
-      {t:'Catalog DataSet',i:'🗂',f:[
-        {id:'dsId',label:'Product Catalog DataSet ID',type:'text',req:true,ph:'CAT-2025YG'},
+      { t:'Catalog DataSet', i:'🗂', f:[
+        { id:'dsId', label:'Product Catalog DataSet ID', type:'text', req:true, ph:'CAT-2025YG' },
       ]},
-      {t:'New Attributes',i:'➕',f:[
-        {id:'attr1Name',label:'Attribute 1 Name',type:'text',req:true,ph:'Available Offline'},
-        {id:'attr1Type',label:'Attribute 1 Type',type:'select',opts:['TEXT','NUMBER','DATE','BOOLEAN','ARRAY'],def:'TEXT'},
-        {id:'attr2Name',label:'Attribute 2 Name (optional)',type:'text',ph:'Region'},
-        {id:'attr2Type',label:'Attribute 2 Type',type:'select',opts:['TEXT','NUMBER','DATE','BOOLEAN','ARRAY'],def:'TEXT'},
+      { t:'New Attributes', i:'➕', f:[
+        { id:'attr1Name', label:'Attribute 1 Name', type:'text',   req:true, ph:'Available Offline' },
+        { id:'attr1Type', label:'Attribute 1 Type', type:'select', opts:['TEXT','NUMBER','DATE','BOOLEAN','ARRAY'], def:'TEXT' },
+        { id:'attr2Name', label:'Attribute 2 Name (optional)', type:'text', ph:'Region' },
+        { id:'attr2Type', label:'Attribute 2 Type', type:'select', opts:['TEXT','NUMBER','DATE','BOOLEAN','ARRAY'], def:'TEXT' },
       ]},
     ],
-    build(f){
-      const dsId=f.dsId||'REPLACE_CATALOG_ID';
-      let attrs=`{ name: "${f.attr1Name||'NewAttribute'}", type: ${f.attr1Type||'TEXT'} }`;
-      if(f.attr2Name) attrs+=`\n          { name: "${f.attr2Name}", type: ${f.attr2Type||'TEXT'} }`;
-      return`mutation {\n  updateDataSet(\n    where: { dataSetId: "${dsId}" }\n    to: {\n      attributes: {\n        create: [\n          ${attrs}\n        ]\n      }\n    }\n  ) {\n    dataSetId\n  }\n}`}
+    build(f) {
+      let attrs = `{ name: "${f.attr1Name || 'NewAttribute'}", type: ${f.attr1Type || 'TEXT'} }`;
+      if (f.attr2Name) attrs += `\n          { name: "${f.attr2Name}", type: ${f.attr2Type || 'TEXT'} }`;
+      return `mutation {\n  updateDataSet(\n    where: { dataSetId: "${f.dsId || 'REPLACE_CATALOG_ID'}" }\n    to: {\n      attributes: {\n        create: [\n          ${attrs}\n        ]\n      }\n    }\n  ) {\n    dataSetId\n  }\n}`;
+    },
   },
 ]},
-];
 
-// ─────────────────────────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────────────────────────
-let current = null;
-let vals = {};
+]; /* end OPS */
 
-// ─────────────────────────────────────────────────────────────
-// SIDEBAR
-// ─────────────────────────────────────────────────────────────
-function buildSidebar() {
-  const sb = document.getElementById('sb');
-  OPS.forEach(cat => {
-    const lbl = document.createElement('div');
-    lbl.className = 'sb-cat';
-    lbl.textContent = cat.cat;
-    sb.appendChild(lbl);
-    cat.list.forEach(op => {
-      const btn = document.createElement('button');
-      btn.className = 'sb-btn' + (op.type === 'm' ? ' mut' : '');
-      btn.id = 'sb-' + op.id;
-      btn.innerHTML = '<span class="tag ' + op.type + '">' + op.type.toUpperCase() + '</span>' + op.label;
-      btn.onclick = () => selectOp(op);
-      sb.appendChild(btn);
+
+/* ═══════════════════════════════════════════════════════════════
+   6. STATE
+   Central store for the active operation and its field values.
+   ═══════════════════════════════════════════════════════════════ */
+const State = {
+  op:   null,
+  vals: {},
+
+  /** Reset and initialise defaults for a new operation */
+  init(op) {
+    this.op   = op;
+    this.vals = {};
+    (op.sections || []).forEach(sec =>
+      sec.f.forEach(f => { if (f.def !== undefined) this.vals[f.id] = f.def; })
+    );
+  },
+
+  set(id, value) { this.vals[id] = value; },
+
+  /** Locate a Field definition within the current op by its id */
+  findField(id) {
+    for (const sec of (this.op?.sections || []))
+      for (const f of sec.f)
+        if (f.id === id) return f;
+    return null;
+  },
+};
+
+
+/* ═══════════════════════════════════════════════════════════════
+   7. SYNTAX HIGHLIGHTER
+   ═══════════════════════════════════════════════════════════════ */
+const SyntaxHighlighter = {
+  highlight(raw) {
+    return raw.split('\n').map(line => {
+      let h = _esc(line);
+      h = h.replace(/\b(mutation|query)\b/,    '<span class="kw">$1</span>');
+      h = h.replace(/&quot;([^&]*)&quot;/g,     '<span class="str">&quot;$1&quot;</span>');
+      h = h.replace(/:\s*(\d+)(\s|$)/g,         ': <span class="num">$1</span>$2');
+      h = h.replace(/([{}[\]])/g,               '<span class="br">$1</span>');
+      h = h.replace(/\b([a-zA-Z_]\w*)(\s*):/g,  '<span class="arg">$1</span>$2:');
+      return `<span class="ql">${h}</span>`;
+    }).join('');
+  },
+};
+
+
+/* ═══════════════════════════════════════════════════════════════
+   8. SIDEBAR
+   ═══════════════════════════════════════════════════════════════ */
+const Sidebar = {
+  build() {
+    const sb = document.getElementById('sb');
+    OPS.forEach(cat => {
+      const lbl = document.createElement('div');
+      lbl.className   = 'sb-cat';
+      lbl.textContent = cat.cat;
+      sb.appendChild(lbl);
+
+      cat.list.forEach(op => {
+        const btn = document.createElement('button');
+        btn.className = `sb-btn${op.type === 'm' ? ' mut' : ''}`;
+        btn.id        = `sb-${op.id}`;
+        btn.innerHTML = `<span class="tag ${op.type}">${op.type.toUpperCase()}</span>${op.label}`;
+        btn.onclick   = () => ContentRenderer.select(op);
+        sb.appendChild(btn);
+      });
     });
-  });
-}
+  },
 
-// ─────────────────────────────────────────────────────────────
-// SELECT OP
-// ─────────────────────────────────────────────────────────────
-function selectOp(op) {
-  document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
-  const el = document.getElementById('sb-' + op.id);
-  if (el) el.classList.add('active');
-  current = op;
-  vals = {};
-  op.sections.forEach(sec => sec.f.forEach(f => { if (f.def !== undefined) vals[f.id] = f.def; }));
-  renderContent();
-}
+  setActive(id) {
+    document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`sb-${id}`)?.classList.add('active');
+  },
+};
 
-// ─────────────────────────────────────────────────────────────
-// RENDER CONTENT
-// ─────────────────────────────────────────────────────────────
-function renderContent() {
-  const op = current;
-  const container = document.getElementById('content');
-  container.innerHTML = '';
 
-  const area = document.createElement('div');
-  area.className = 'op-area fadein';
-  const typeLabel = op.type === 'm' ? 'MUTATION' : 'QUERY';
-  const fixHtml = op.fix
-    ? '<div class="op-fix"><span style="color:var(--amber)">⚠ Fix applied:</span> ' + esc(op.fix) + '</div>'
-    : '';
+/* ═══════════════════════════════════════════════════════════════
+   9. FORM RENDERER
+   Renders field sections and wires a single delegated listener
+   on the form pane — no per-field re-binding on op switch.
+   ═══════════════════════════════════════════════════════════════ */
+const FormRenderer = {
+  render(pane, op) {
+    if (!op.sections.length) {
+      pane.innerHTML = '<div class="no-params">No parameters required. This query runs as-is.</div>';
+      return;
+    }
 
-  area.innerHTML =
-    '<div class="op-top">' +
-      '<div class="op-top-row">' +
-        '<span class="tag ' + op.type + '">' + typeLabel + '</span>' +
-        '<span class="op-name">' + op.label + '</span>' +
-      '</div>' +
-      '<div class="op-desc">' + op.desc + '</div>' +
-      fixHtml +
-    '</div>' +
-    '<div class="split">' +
-      '<div class="form-pane" id="form-pane"></div>' +
-      '<div class="output-pane">' +
-        '<div class="out-hdr">' +
-          '<span class="out-label">Generated Query</span>' +
-          '<div class="out-actions">' +
-            '<button class="copy-btn" id="copy-btn" onclick="copyQuery()">⌘ Copy Query</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="query-wrap" id="query-wrap"></div>' +
-        '<div class="curl-hdr" id="curl-hdr" style="margin-top:12px;font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;border-top:1px solid var(--line);padding-top:10px">curl</div>' +
-        '<div class="query-wrap" id="curl-wrap"></div>' +
-        '<button class="copy-btn" id="curl-copy-btn" style="margin-top:6px" onclick="copyCurl()">⌘ Copy curl</button>' +
-      '</div>' +
-    '</div>';
-
-  container.appendChild(area);
-  buildForm();
-  updateQuery();
-}
-
-// ─────────────────────────────────────────────────────────────
-// BUILD FORM
-// ─────────────────────────────────────────────────────────────
-function buildForm() {
-  const pane = document.getElementById('form-pane');
-  const op = current;
-  if (!op.sections.length) {
-    pane.innerHTML = '<div style="color:var(--dim);font-size:12px;padding:8px 0">No parameters required. This query runs as-is.</div>';
-    return;
-  }
-  op.sections.forEach(sec => {
-    const el = document.createElement('div');
-    el.className = 'section';
-    el.innerHTML =
-      '<div class="sec-hdr"><span class="sec-hdr-icon">' + sec.i + '</span>' + sec.t + '</div>' +
-      '<div class="sec-body">' + sec.f.map(renderField).join('') + '</div>';
-    pane.appendChild(el);
-  });
-
-  // bind events
-  op.sections.forEach(sec => sec.f.forEach(f => {
-    const el = document.getElementById('f-' + f.id);
-    if (!el) return;
-    const ev = (f.type === 'select' || f.type === 'checkbox') ? 'change' : 'input';
-    el.addEventListener(ev, e => {
-      vals[f.id] = f.type === 'checkbox' ? e.target.checked : e.target.value;
-      updateQuery();
+    op.sections.forEach(sec => {
+      const el      = document.createElement('div');
+      el.className  = 'section';
+      el.innerHTML  =
+        `<div class="sec-hdr"><span>${sec.i}</span>${sec.t}</div>` +
+        `<div class="sec-body">${sec.f.map(f => this._renderField(f)).join('')}</div>`;
+      pane.appendChild(el);
     });
-  }));
-}
 
-function renderField(f) {
-  const v = vals[f.id];
-  let input = '';
-  if (f.type === 'select') {
-    input = '<select id="f-' + f.id + '">' +
-      f.opts.map(o => '<option value="' + o + '"' + ((v !== undefined ? v : f.def) === o ? ' selected' : '') + '>' + o + '</option>').join('') +
-      '</select>';
-  } else if (f.type === 'checkbox') {
-    const checked = (v !== undefined ? v : f.def) ? 'checked' : '';
-    input = '<label class="checkbox-row"><input id="f-' + f.id + '" type="checkbox" ' + checked + '/><span>' + f.label + '</span></label>';
-    return '<div class="field">' + input + '</div>';
-  } else {
-    input = '<input id="f-' + f.id + '" type="text" placeholder="' + (f.ph || '') + '" value="' + esc(v !== undefined ? String(v) : '') + '"/>';
-  }
-  return '<div class="field">' +
-    '<label>' + f.label + ' ' + (f.req ? '<span class="req-star">*</span>' : '<span class="opt-tag">optional</span>') + '</label>' +
-    input +
-  '</div>';
-}
+    this._bindDelegate(pane);
+  },
 
-// ─────────────────────────────────────────────────────────────
-// UPDATE QUERY + CURL OUTPUT
-// ─────────────────────────────────────────────────────────────
-function updateQuery() {
-  const raw = current.build(vals);
-  const wrap = document.getElementById('query-wrap');
-  if (!wrap) return;
-  wrap.innerHTML = '<div class="query-display">' + highlight(raw) + '</div>';
+  _renderField(f) {
+    const val      = State.vals[f.id];
+    const renderer = FieldRenderers[f.type] || FieldRenderers.text;
+    const input    = renderer(f, val);
 
-  // build curl
-  const apiKey = document.getElementById('api-key') ? document.getElementById('api-key').value : 'YOUR_API_KEY';
-  const ep = document.getElementById('region') ? document.getElementById('region').value : 'https://connect-gql-us-1.goacoustic.com';
-  const escaped = raw.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n');
-  const curlCmd =
-    'curl -X POST \'' + ep + '\' \\\n' +
-    '  -H "x-api-key: ' + (apiKey || 'YOUR_API_KEY') + '" \\\n' +
-    '  -H "Content-Type: application/json" \\\n' +
-    '  --data \'{"query":"' + escaped + '"}\'';
+    /* Checkboxes carry their own <label> — skip the outer wrapper */
+    if (f.type === 'checkbox') {
+      return `<div class="field">${input}</div>`;
+    }
 
-  const curlWrap = document.getElementById('curl-wrap');
-  if (curlWrap) curlWrap.innerHTML = '<div class="query-display" style="color:var(--peri2);font-size:11px">' + esc(curlCmd) + '</div>';
-}
+    const badge = f.req
+      ? `<span class="req-star">*</span>`
+      : `<span class="opt-tag">optional</span>`;
+    const hint  = f.hint ? `<div class="field-hint">${f.hint}</div>` : '';
+    const warn  = f.warn ? `<div class="field-warn">⚠ ${f.warn}</div>` : '';
 
-function getQuery() { return current ? current.build(vals) : ''; }
+    return `<div class="field"><label>${f.label} ${badge}</label>${input}${hint}${warn}</div>`;
+  },
 
-// ─────────────────────────────────────────────────────────────
-// SYNTAX HIGHLIGHT
-// ─────────────────────────────────────────────────────────────
-function highlight(raw) {
-  return raw.split('\n').map(line => {
-    let h = esc(line);
-    h = h.replace(/\b(mutation|query)\b/, '<span class="kw">$1</span>');
-    h = h.replace(/&quot;([^&]*)&quot;/g, '<span class="str">&quot;$1&quot;</span>');
-    h = h.replace(/:\s*(\d+)(\s|$)/g, ': <span class="num">$1</span>$2');
-    h = h.replace(/:\s*([A-Z_]{2,})(\s|$)/g, ': <span class="op2">$1</span>$2');
-    h = h.replace(/([{}[\]])/g, '<span class="br">$1</span>');
-    h = h.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)(\s*):/g, '<span class="arg">$1</span>$2:');
-    return '<span class="ql">' + h + '</span>';
-  }).join('');
-}
+  /** Single delegated listener handles all input types */
+  _bindDelegate(pane) {
+    pane.addEventListener('change', e => {
+      const id = e.target.id?.replace(/^f-/, '');
+      if (!id) return;
+      const field = State.findField(id);
+      if (!field) return;
+      State.set(id, field.type === 'checkbox' ? e.target.checked : e.target.value);
+      OutputRenderer.update();
+    });
+    pane.addEventListener('input', e => {
+      const id = e.target.id?.replace(/^f-/, '');
+      if (!id) return;
+      const field = State.findField(id);
+      if (!field || field.type === 'select' || field.type === 'checkbox') return;
+      State.set(id, e.target.value);
+      OutputRenderer.update();
+    });
+  },
+};
 
-// ─────────────────────────────────────────────────────────────
-// COPY
-// ─────────────────────────────────────────────────────────────
-function copyQuery() {
-  const q = getQuery();
-  navigator.clipboard.writeText(q).then(() => {
-    const btn = document.getElementById('copy-btn');
-    if (btn) { btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = '⌘ Copy Query', 2000); }
-  }).catch(() => {
-    const ta = document.createElement('textarea');
-    ta.value = q; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
+
+/* ═══════════════════════════════════════════════════════════════
+   10. OUTPUT RENDERER
+   Renders the generated GraphQL + curl command into the pane.
+   ═══════════════════════════════════════════════════════════════ */
+const OutputRenderer = {
+  update() {
+    if (!State.op) return;
+    const raw = State.op.build(State.vals);
+
+    const qWrap = document.getElementById('query-wrap');
+    if (qWrap) qWrap.innerHTML =
+      `<div class="query-display">${SyntaxHighlighter.highlight(raw)}</div>`;
+
+    const cWrap = document.getElementById('curl-wrap');
+    if (cWrap) cWrap.innerHTML =
+      `<div class="query-display" style="color:var(--peri2);font-size:11px">${_esc(this._buildCurl(raw))}</div>`;
+  },
+
+  _buildCurl(query) {
+    const key     = document.getElementById('api-key')?.value || 'YOUR_API_KEY';
+    const ep      = document.getElementById('region')?.value  || REGIONS[0].url;
+    const escaped = query.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n');
+    return `curl -X POST '${ep}' \\\n  -H "x-api-key: ${key}" \\\n  -H "Content-Type: application/json" \\\n  --data '{"query":"${escaped}"}'`;
+  },
+
+  rawQuery() { return State.op ? State.op.build(State.vals) : ''; },
+  rawCurl()  { return this._buildCurl(this.rawQuery()); },
+};
+
+
+/* ═══════════════════════════════════════════════════════════════
+   11. CONTENT RENDERER
+   Orchestrates op selection → state init → pane render.
+   ═══════════════════════════════════════════════════════════════ */
+const ContentRenderer = {
+  select(op) {
+    State.init(op);
+    Sidebar.setActive(op.id);
+    this._render(op);
+  },
+
+  _render(op) {
+    const container = document.getElementById('content');
+    container.innerHTML = '';
+
+    const area      = document.createElement('div');
+    area.className  = 'op-area fadein';
+    const fixHtml   = op.fix
+      ? `<div class="op-fix"><span style="color:var(--amber)">⚠ Fix applied:</span> ${_esc(op.fix)}</div>`
+      : '';
+
+    area.innerHTML = `
+      <div class="op-top">
+        <div class="op-top-row">
+          <span class="tag ${op.type}">${op.type === 'm' ? 'MUTATION' : 'QUERY'}</span>
+          <span class="op-name">${op.label}</span>
+        </div>
+        <div class="op-desc">${op.desc}</div>
+        ${fixHtml}
+      </div>
+      <div class="split">
+        <div class="form-pane" id="form-pane"></div>
+        <div class="output-pane">
+          <div class="out-hdr">
+            <span class="out-label">Generated Query</span>
+            <div class="out-actions">
+              <button class="copy-btn" id="copy-btn" onclick="Clipboard.copy('query')">⌘ Copy Query</button>
+            </div>
+          </div>
+          <div class="query-wrap" id="query-wrap"></div>
+          <div class="curl-divider">curl</div>
+          <div class="query-wrap" id="curl-wrap"></div>
+          <div class="curl-actions">
+            <button class="copy-btn" id="curl-copy-btn" onclick="Clipboard.copy('curl')">⌘ Copy curl</button>
+          </div>
+        </div>
+      </div>`;
+
+    container.appendChild(area);
+    FormRenderer.render(document.getElementById('form-pane'), op);
+    OutputRenderer.update();
+  },
+};
+
+
+/* ═══════════════════════════════════════════════════════════════
+   12. CLIPBOARD
+   ═══════════════════════════════════════════════════════════════ */
+const Clipboard = {
+  copy(target) {
+    const text = target === 'curl' ? OutputRenderer.rawCurl() : OutputRenderer.rawQuery();
+    const btnId = target === 'curl' ? 'curl-copy-btn' : 'copy-btn';
+    const orig  = target === 'curl' ? '⌘ Copy curl'   : '⌘ Copy Query';
+
+    navigator.clipboard.writeText(text).then(
+      ()  => this._flash(btnId, orig),
+      ()  => { /* fallback for non-HTTPS */
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        this._flash(btnId, orig);
+      }
+    );
+  },
+
+  _flash(btnId, orig) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('done');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('done'); }, 2000);
+  },
+};
+
+
+/* ═══════════════════════════════════════════════════════════════
+   13. INIT
+   ═══════════════════════════════════════════════════════════════ */
+(function init() {
+  /* Populate region selector from REGIONS config */
+  const sel = document.getElementById('region');
+  REGIONS.forEach(r => {
+    const opt       = document.createElement('option');
+    opt.value       = r.url;
+    opt.textContent = r.label;
+    sel.appendChild(opt);
   });
-}
+  document.getElementById('ep-txt').textContent = REGIONS[0].url;
 
-function copyCurl() {
-  const apiKey = document.getElementById('api-key') ? document.getElementById('api-key').value : 'YOUR_API_KEY';
-  const ep = document.getElementById('region') ? document.getElementById('region').value : 'https://connect-gql-us-1.goacoustic.com';
-  const raw = getQuery();
-  const escaped = raw.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n');
-  const curlCmd =
-    'curl -X POST \'' + ep + '\' \\\n' +
-    '  -H "x-api-key: ' + (apiKey || 'YOUR_API_KEY') + '" \\\n' +
-    '  -H "Content-Type: application/json" \\\n' +
-    '  --data \'{"query":"' + escaped + '"}\'';
-  navigator.clipboard.writeText(curlCmd).then(() => {
-    const btn = document.getElementById('curl-copy-btn');
-    if (btn) { btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = '⌘ Copy curl', 2000); }
-  }).catch(() => {
-    const ta = document.createElement('textarea');
-    ta.value = curlCmd; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
+  /* Sync endpoint pill and regenerate curl on config change */
+  document.getElementById('api-key').addEventListener('input', () => OutputRenderer.update());
+  sel.addEventListener('change', e => {
+    document.getElementById('ep-txt').textContent = e.target.value;
+    OutputRenderer.update();
   });
-}
 
-// re-render curl when API key or region changes
-document.addEventListener('DOMContentLoaded', () => {
-  const apiKeyInput = document.getElementById('api-key');
-  const regionInput = document.getElementById('region');
-  if (apiKeyInput) apiKeyInput.addEventListener('input', () => { if (current) updateQuery(); });
-  if (regionInput) regionInput.addEventListener('change', () => { if (current) updateQuery(); });
-});
-
-// ─────────────────────────────────────────────────────────────
-// UTILS
-// ─────────────────────────────────────────────────────────────
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ─────────────────────────────────────────────────────────────
-// INIT
-// ─────────────────────────────────────────────────────────────
-buildSidebar();
+  Sidebar.build();
+})();
 </script>
 </body>
 </html>

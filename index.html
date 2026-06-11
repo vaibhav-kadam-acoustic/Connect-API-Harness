@@ -317,7 +317,7 @@ const OPS=[
         {id:'addrField',label:'Address Field (for addressableList)',type:'text',ph:'Email'},
         {id:'addrVal',label:'Address Value (for addressableList)',type:'text',ph:'user@example.com'},
         {id:'reason',label:'Delete Reason',type:'select',
-          opts:['USER_REQUEST','RIGHT_TO_BE_FORGOTTEN','DEPROVISIONING'],def:'USER_REQUEST'},
+          opts:['USER_REQUEST','RIGHT_TO_BE_FORGOTTEN','ADMIN_ACTION'],def:'USER_REQUEST'},
       ]},
     ],
     build(f){
@@ -649,7 +649,7 @@ function renderContent() {
     '<div class="split">' +
       '<div class="form-pane" id="form-pane"></div>' +
       '<div class="output-pane">' +
-        '<div class="out-header">' +
+        '<div class="out-hdr">' +
           '<span class="out-label">Generated Query</span>' +
           '<div class="out-actions">' +
             '<button class="copy-btn" id="copy-btn" onclick="copyQuery()">⌘ Copy Query</button>' +
@@ -690,9 +690,9 @@ function buildForm() {
   op.sections.forEach(sec => sec.f.forEach(f => {
     const el = document.getElementById('f-' + f.id);
     if (!el) return;
-    const ev = f.type === 'select' ? 'change' : 'input';
+    const ev = (f.type === 'select' || f.type === 'checkbox') ? 'change' : 'input';
     el.addEventListener(ev, e => {
-      vals[f.id] = e.target.value;
+      vals[f.id] = f.type === 'checkbox' ? e.target.checked : e.target.value;
       updateQuery();
     });
   }));
@@ -705,6 +705,10 @@ function renderField(f) {
     input = '<select id="f-' + f.id + '">' +
       f.opts.map(o => '<option value="' + o + '"' + ((v !== undefined ? v : f.def) === o ? ' selected' : '') + '>' + o + '</option>').join('') +
       '</select>';
+  } else if (f.type === 'checkbox') {
+    const checked = (v !== undefined ? v : f.def) ? 'checked' : '';
+    input = '<label class="checkbox-row"><input id="f-' + f.id + '" type="checkbox" ' + checked + '/><span>' + f.label + '</span></label>';
+    return '<div class="field">' + input + '</div>';
   } else {
     input = '<input id="f-' + f.id + '" type="text" placeholder="' + (f.ph || '') + '" value="' + esc(v !== undefined ? String(v) : '') + '"/>';
   }

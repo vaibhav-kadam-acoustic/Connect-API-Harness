@@ -72,7 +72,19 @@ header{border-bottom:1px solid var(--line);padding:0 20px;height:52px;display:fl
 .form-pane{width:312px;border-right:1px solid var(--line);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;flex-shrink:0;background:var(--bg2)}
 .form-pane::-webkit-scrollbar{width:3px}
 .form-pane::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
-.section{background:var(--bg);border:1.5px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(31,30,93,.07)}
+.section{flex-shrink:0;background:var(--bg);border:1.5px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(31,30,93,.07)}
+.sec-hdr{cursor:pointer;list-style:none;user-select:none}
+.sec-hdr::-webkit-details-marker{display:none}
+.sec-hdr::after{display:inline-block;content:'▾';margin-left:auto;font-size:11px;transition:transform .15s}
+.section:not([open]) .sec-hdr::after{transform:rotate(-90deg)}
+.section:not([open]) .sec-hdr{border-bottom:none}
+.list-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.list-row input{flex:1 1 90px;min-width:0}
+.list-row select{flex:0 0 92px;min-width:0;padding:7px 4px}
+.rm-btn{flex-shrink:0;width:26px;height:30px;border:1.5px solid var(--line);background:transparent;border-radius:8px;color:var(--muted);cursor:pointer}
+.rm-btn:hover{border-color:var(--red);color:var(--red)}
+.add-btn{padding:6px 10px;border:1.5px dashed var(--peri);background:transparent;border-radius:8px;color:var(--peri);cursor:pointer;font-family:var(--ui);font-size:12px;font-weight:600}
+.add-btn:hover{background:var(--perilight)}
 .sec-hdr{padding:9px 13px;border-bottom:1px solid var(--line);font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:6px;font-family:var(--ui);font-weight:600;background:var(--bg2)}
 .sec-body{padding:13px;display:flex;flex-direction:column;gap:10px}
 .field{display:flex;flex-direction:column;gap:4px}
@@ -205,7 +217,7 @@ function _esc(s) {
    To add a new input type:
      FieldRenderers.mytype = (f, val) => '<html string>'
 
-   Supported types: text | number | password | select | checkbox | textarea
+   Supported types: text | number | password | select | checkbox | textarea | list
    ═══════════════════════════════════════════════════════════════ */
 const FieldRenderers = {
   text(f, val) {
@@ -230,6 +242,17 @@ const FieldRenderers = {
   },
   textarea(f, val) {
     return `<textarea id="f-${f.id}" rows="${f.rows||3}" placeholder="${f.ph||''}">${_esc(val??'')}</textarea>`;
+  },
+  /** Repeatable rows. f.cols: [{ k, ph?, opts? }]; value: array of row objects */
+  list(f, rows) {
+    const cell = (c, r, i) => c.opts
+      ? `<select data-list="${f.id}" data-i="${i}" data-k="${c.k}">${c.opts.map(o =>
+          `<option${(r[c.k] ?? c.opts[0]) === o ? ' selected' : ''}>${_esc(o)}</option>`).join('')}</select>`
+      : `<input type="text" data-list="${f.id}" data-i="${i}" data-k="${c.k}" placeholder="${c.ph||''}" value="${_esc(r[c.k]??'')}"/>`;
+    return (rows || []).map((r, i) =>
+      `<div class="list-row">${f.cols.map(c => cell(c, r, i)).join('')}` +
+      `<button type="button" class="rm-btn" data-rm="${f.id}" data-i="${i}" title="Remove">×</button></div>`
+    ).join('') + `<button type="button" class="add-btn" data-add="${f.id}">+ ${f.add || 'Add another'}</button>`;
   },
 };
 
@@ -278,6 +301,20 @@ const Q = {
         return `{ name: "${p.name}", value: ${v} }`;
       })
       .join('\n        '),
+
+  /** Rows from a list field with every listed key non-empty */
+  rows: (list, ...keys) => (list || []).filter(r => keys.every(k => r[k] !== undefined && r[k] !== '')),
+
+  /** consent: { consentGroups: [...] } block from a consent list field, or '' if empty */
+  consent: (list, pad = '      ') => {
+    const groups = Q.rows(list, 'id').map(r => {
+      const st = r.status || 'OPT_IN', ch = r.chan || 'EMAIL';
+      const p = pad + '      ';
+      const chLine = ch !== '(none)' ? `\n${p}channels: [{ channel: ${ch}, status: ${st} }]` : '';
+      return `${pad}    {\n${p}consentGroupId: "${r.id}"\n${p}status: ${st}${chLine}\n${pad}    }`;
+    });
+    return groups.length ? `\n${pad}consent: {\n${pad}  consentGroups: [\n${groups.join('\n')}\n${pad}  ]\n${pad}}` : '';
+  },
 };
 
 
@@ -319,10 +356,20 @@ const OPS = [
 
 /* ── Introspection ─────────────────────────────────────────── */
 { cat:'🔍 Introspection', list:[
-  { id:'info', label:'Schema Info (_info)', type:'q',
-    desc:'Returns API version and subscription info.',
+  { id:'schemaOps', label:'List Available Operations', type:'q',
+    desc:'Standard GraphQL introspection — lists every query and mutation your API key can call. If this returns an error, introspection is disabled on the endpoint; use the public schema file at public-assets.goacoustic.com/connect-external.graphql.',
+    fix:'_info does not exist in the Connect schema (only _fake). Replaced with __schema introspection.',
     sections:[],
-    build: () => `{\n  _info {\n    version\n    subscriptionId\n  }\n}`,
+    build: () => `{\n  __schema {\n    queryType {\n      fields { name }\n    }\n    mutationType {\n      fields { name }\n    }\n  }\n}`,
+  },
+  { id:'schemaType', label:'Describe a Type', type:'q',
+    desc:'Introspects one type — its fields (for output types) or input fields (for input types). Example types: Contact, Signal, ContactCreateInput, SignalDataFilterInput.',
+    sections:[
+      { t:'Type', i:'🔍', f:[
+        { id:'typeName', label:'Type Name', type:'text', req:true, def:'Signal', ph:'Signal' },
+      ]},
+    ],
+    build: (f) => `{\n  __type(name: "${f.typeName || 'Signal'}") {\n    name\n    kind\n    fields {\n      name\n      type { name kind ofType { name kind } }\n    }\n    inputFields {\n      name\n      type { name kind ofType { name kind } }\n    }\n    enumValues { name }\n  }\n}`,
   },
 ]},
 
@@ -398,11 +445,10 @@ const OPS = [
     desc:'LIVE-VERIFIED: Use contacts with filter + and conditions to find a specific contact. Combine key fields like Unique ID + Email for precise lookup.',
     fix:'contact(contactId) not used in practice — use contacts(filter) with and conditions instead.',
     sections:[
-      { t:'Lookup Filters', i:'🎯', f:[
-        { id:'f1name', label:'Filter Field 1',          type:'text', req:true, ph:'Unique ID', def:'Unique ID' },
-        { id:'f1val',  label:'Filter Value 1',          type:'text', req:true, ph:'VK1418' },
-        { id:'f2name', label:'Filter Field 2 (optional)',type:'text', ph:'Email' },
-        { id:'f2val',  label:'Filter Value 2 (optional)',type:'text', ph:'user@example.com' },
+      { t:'Lookup Filters (all must match)', i:'🎯', f:[
+        { id:'filters', label:'Field = Value', type:'list', req:true, add:'Add another filter',
+          cols:[{ k:'name', ph:'Unique ID' }, { k:'value', ph:'VK1418' }],
+          def:[{ name:'Unique ID', value:'' }] },
       ]},
       { t:'Response Fields', i:'📋', f:[
         { id:'selFields', label:'selectByName (comma-separated)', type:'text',
@@ -410,12 +456,13 @@ const OPS = [
       ]},
     ],
     build(f) {
-      const n1 = f.f1name || 'Unique ID', v1 = f.f1val || 'VALUE1';
+      const rows = Q.rows(f.filters, 'name', 'value');
+      if (!rows.length) rows.push({ name: 'Unique ID', value: 'VALUE1' });
       const sel = (f.selFields || 'First Name,Email,Unique ID')
         .split(',').map(s => `"${s.trim()}"`).filter(Boolean).join(', ');
-      const filterBody = (f.f2name && f.f2val)
-        ? `filter: [\n      {\n        and: [\n          { field: "${n1}", eq: "${v1}" }\n          { field: "${f.f2name}", eq: "${f.f2val}" }\n        ]\n      }\n    ]`
-        : `filter: [{ field: "${n1}", eq: "${v1}" }]`;
+      const filterBody = rows.length > 1
+        ? `filter: [\n      {\n        and: [\n${rows.map(r => `          { field: "${r.name}", eq: "${r.value}" }`).join('\n')}\n        ]\n      }\n    ]`
+        : `filter: [{ field: "${rows[0].name}", eq: "${rows[0].value}" }]`;
       return `query {\n  contacts(\n    ${filterBody}\n  ) {\n    nodes {\n      attributes(selectByName: [${sel}]) {\n        name\n        value\n      }\n    }\n    totalCount\n  }\n}`;
     },
   },
@@ -427,34 +474,22 @@ const OPS = [
           hint:'Omit to use default audience' },
       ]},
       { t:'Contact Attributes', i:'👤', f:[
-        { id:'keyAttr', label:'Key Attribute Name',  type:'text', req:true, ph:'Unique ID',
-          hint:'The audience key field' },
-        { id:'keyVal',  label:'Key Attribute Value', type:'text', req:true, ph:'user001' },
-        { id:'emailVal',label:'Email Value',         type:'text', ph:'user@example.com' },
-        { id:'a3n',     label:'Extra Attribute Name',type:'text', ph:'firstName' },
-        { id:'a3v',     label:'Extra Attribute Value',type:'text',ph:'Jane' },
+        { id:'attrs', label:'Attribute Name / Value', type:'list', req:true, add:'Add another attribute',
+          hint:'First row should be the audience key field',
+          cols:[{ k:'name', ph:'Attribute name' }, { k:'value', ph:'Value' }],
+          def:[{ name:'Unique ID', value:'' }, { name:'Email', value:'' }] },
       ]},
       { t:'Consent (optional)', i:'✅', f:[
-        { id:'cgId',     label:'Consent Group ID', type:'text',
-          ph:'consent-group-uuid' },
-        { id:'cgStatus', label:'Consent Status',   type:'select',
-          opts:['(none)','OPT_IN','OPT_OUT','OPT_IN_UNVERIFIED'], def:'OPT_IN' },
-        { id:'cgChan',   label:'Channel',          type:'select',
-          opts:['(none)','EMAIL','SMS','WHATSAPP'], def:'EMAIL' },
+        { id:'consent', label:'Group ID / Status / Channel', type:'list', add:'Add another consent',
+          cols:[{ k:'id', ph:'consent-group-uuid' },
+                { k:'status', opts:['OPT_IN','OPT_OUT','OPT_IN_UNVERIFIED'] },
+                { k:'chan', opts:['EMAIL','SMS','WHATSAPP','MOBILE','(none)'] }],
+          def:[] },
       ]},
     ],
     build(f) {
-      const attrs = Q.attrLines([
-        { name: f.keyAttr, value: f.keyVal  },
-        { name: 'Email',   value: f.emailVal },
-        { name: f.a3n,     value: f.a3v     },
-      ]);
-      let con = '';
-      if (f.cgId && f.cgStatus && f.cgStatus !== '(none)') {
-        const ch = (f.cgChan && f.cgChan !== '(none)')
-          ? `\n          channels: [{ channel: ${f.cgChan}, status: ${f.cgStatus} }]` : '';
-        con = `\n      consent: {\n        consentGroups: [{\n          consentGroupId: "${f.cgId}"\n          status: ${f.cgStatus}${ch}\n        }]\n      }`;
-      }
+      const attrs = Q.attrLines(Q.rows(f.attrs, 'name', 'value'));
+      const con = Q.consent(f.consent);
       const da = f.dsId ? `dataSetId: "${f.dsId}", ` : '';
       return `mutation {\n  createContacts(\n    ${da}contactsInput: [{\n      attributes: [\n        ${attrs}\n      ]${con}\n    }]\n  ) {\n    items {\n      contactKey\n    }\n  }\n}`;
     },
@@ -471,15 +506,28 @@ const OPS = [
         { id:'key', label:'Key Value', type:'text',
           ph:'VK9628  ← use this OR contactId above' },
       ]},
-      { t:'Field to Update', i:'✏️', f:[
-        { id:'attrName', label:'Attribute Name', type:'text', req:true, ph:'Last Name' },
-        { id:'attrVal',  label:'New Value',      type:'text', req:true, ph:'Kadam' },
+      { t:'Fields to Update', i:'✏️', f:[
+        { id:'attrs', label:'Attribute Name / New Value', type:'list', add:'Add another attribute',
+          cols:[{ k:'name', ph:'Last Name' }, { k:'value', ph:'Kadam' }],
+          def:[{ name:'', value:'' }] },
+      ]},
+      { t:'Consent to Update (optional)', i:'✅', f:[
+        { id:'consent', label:'Group ID / Status / Channel', type:'list', add:'Add another consent',
+          cols:[{ k:'id', ph:'consent-group-uuid' },
+                { k:'status', opts:['OPT_IN','OPT_OUT','OPT_IN_UNVERIFIED'] },
+                { k:'chan', opts:['EMAIL','SMS','WHATSAPP','MOBILE','(none)'] }],
+          def:[] },
       ]},
     ],
     build(f) {
       const id  = f.contactId ? `contactId: "${f.contactId}"` : `key: "${f.key || 'key-value'}"`;
       const da  = f.dsId ? `\n    dataSetId: "${f.dsId}",` : '';
-      return `mutation {\n  updateContacts(${da}\n    updateContactInputs: [{\n      ${id}\n      to: {\n        attributes: [{\n          name: "${f.attrName || 'Last Name'}"\n          value: "${f.attrVal || 'newValue'}"\n        }]\n      }\n    }]\n  ) {\n    modifiedCount\n  }\n}`;
+      const rows = Q.rows(f.attrs, 'name', 'value');
+      const con  = Q.consent(f.consent, '        ');
+      const attrs = rows.length || !con
+        ? `\n        attributes: [\n          ${Q.attrLines(rows.length ? rows : [{ name:'Last Name', value:'newValue' }]).replace(/\n {8}/g, '\n          ')}\n        ]`
+        : '';
+      return `mutation {\n  updateContacts(${da}\n    updateContactInputs: [{\n      ${id}\n      to: {${attrs}${con}\n      }\n    }]\n  ) {\n    modifiedCount\n  }\n}`;
     },
   },
   { id:'deleteContacts', label:'Delete Contact(s)', type:'m',
@@ -493,7 +541,8 @@ const OPS = [
         { id:'addrField', label:'Address Field (for addressableList)', type:'text', ph:'Email' },
         { id:'addrVal',   label:'Address Value (for addressableList)', type:'text', ph:'user@example.com' },
         { id:'reason',    label:'Delete Reason', type:'select',
-          opts:['USER_REQUEST','RIGHT_TO_BE_FORGOTTEN','ADMIN_ACTION'], def:'USER_REQUEST' },
+          opts:['USER_REQUEST','RIGHT_TO_BE_FORGOTTEN','DEPROVISIONING','IDENTITY_MERGE'], def:'USER_REQUEST',
+          hint:'For a GDPR erasure request use RIGHT_TO_BE_FORGOTTEN' },
       ]},
     ],
     build(f) {
@@ -598,69 +647,42 @@ const OPS = [
   },
 ]},
 
-/* ── Activity Events ───────────────────────────────────────── */
-{ cat:'📅 Activity Events', list:[
-  { id:'activityEvents', label:'Query Activity Events', type:'q',
-    desc:'Paginated activity events — EMAIL, SMS, CONSENT, FORM_SUBMISSION, etc.',
+/* ── Signals (behavior events) ─────────────────────────────── */
+{ cat:'📅 Signals', list:[
+  { id:'signals', label:'Query Signals', type:'q',
+    desc:'Behavior signals (page views, add-to-cart, orders, etc.) collected by the SDK, bulk import or Event Manager. All filters are optional.',
+    fix:'activityEvents and consentEvents do not exist in the Connect schema. Replaced with signals(filter, sortBy, sortOrder).',
     sections:[
-      { t:'Pagination', i:'📄', f:[
-        { id:'first', label:'First (limit)', type:'number', def:'10', ph:'10' },
-        { id:'after', label:'After Cursor',  type:'text',   ph:'endCursor' },
+      { t:'Pagination & Sort', i:'📄', f:[
+        { id:'first',     label:'First (limit)', type:'number', def:'10', ph:'10' },
+        { id:'after',     label:'After Cursor',  type:'text',   ph:'endCursor from previous page' },
+        { id:'sortBy',    label:'Sort By',       type:'select', opts:['OBSERVED_TIMESTAMP','SIGNAL_TIMESTAMP'], def:'OBSERVED_TIMESTAMP' },
+        { id:'sortOrder', label:'Sort Order',    type:'select', opts:['DESC','ASC'], def:'DESC' },
       ]},
       { t:'Filter (optional)', i:'⚙', f:[
-        { id:'ff', label:'Filter Field', type:'text', ph:'contactId' },
-        { id:'fv', label:'Filter Value', type:'text', ph:'contact-uuid' },
+        { id:'signalType', label:'Signal Type', type:'text', ph:'addToCart' },
+        { id:'from',       label:'Observed From', type:'text', ph:'2026-10-01T00:00:00Z' },
+        { id:'to',         label:'Observed To',   type:'text', ph:'2026-10-06T23:59:59Z' },
+        { id:'source',     label:'Source', type:'select',
+          opts:['(any)','LOG_SIGNAL','SIGNAL_DEFINITION','EVENT_MANAGER','SIGNAL_COLLECTOR','BULK_IMPORT','BEHAVIORAL_AGGREGATIONS'], def:'(any)' },
+        { id:'ident', label:'Contact identifier', type:'list', add:'Add another identifier',
+          cols:[{ k:'k', opts:['contactKey','email','sms','whatsapp','externalId'] }, { k:'v', ph:'value' }],
+          def:[] },
       ]},
     ],
     build(f) {
-      const args = Q.pagination(f.first, f.after);
-      if (f.ff && f.fv) args.push(Q.arrayFilter(f.ff, f.fv));
-      return `{\n  activityEvents(\n    ${args.join('\n    ')}\n  ) {\n    nodes {\n      eventId\n      eventCategory\n      eventType\n      eventDate\n      contactId\n      dataSetId\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n  }\n}`;
-    },
-  },
-  { id:'consentEvents', label:'Query Consent Events', type:'q',
-    desc:'Consent-specific events (opt-ins, opt-outs).',
-    sections:[
-      { t:'Pagination', i:'📄', f:[
-        { id:'first', label:'First', type:'number', def:'10', ph:'10' },
-      ]},
-    ],
-    build(f) {
-      return `{\n  consentEvents(first: ${f.first || 10}) {\n    nodes {\n      eventId\n      eventCategory\n      eventType\n      eventDate\n      contactId\n      consentGroupId\n      channel\n      status\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n  }\n}`;
-    },
-  },
-]},
-
-/* ── GDPR / Privacy ────────────────────────────────────────── */
-{ cat:'⚖️ GDPR / Privacy', list:[
-  { id:'roaJob', label:'Right of Access Job', type:'m',
-    desc:'createRightOfAccessJob — GDPR data export for a contact.',
-    sections:[
-      { t:'Contact', i:'👤', f:[
-        { id:'contactId', label:'Contact ID', type:'text', ph:'contact-uuid' },
-        { id:'key',       label:'Key Value',  type:'text', ph:'alternative to Contact ID' },
-      ]},
-    ],
-    build(f) {
-      const id = f.contactId
-        ? `contactIds: ["${f.contactId}"]`
-        : `contactKeys: ["${f.key || 'key-value'}"]`;
-      return `mutation {\n  createRightOfAccessJob(\n    ${id}\n    sendNotifications: true\n  ) {\n    jobId\n  }\n}`;
-    },
-  },
-  { id:'rtbfJob', label:'Right to be Forgotten Job', type:'m',
-    desc:'⚠️ createRightToBeForgottenJob — permanently erases a contact from all Acoustic services.',
-    sections:[
-      { t:'⚠️ Irreversible Erasure', i:'🗑', f:[
-        { id:'contactId', label:'Contact ID', type:'text', ph:'contact-uuid' },
-        { id:'key',       label:'Key Value',  type:'text', ph:'alternative to Contact ID' },
-      ]},
-    ],
-    build(f) {
-      const id = f.contactId
-        ? `contactIds: ["${f.contactId}"]`
-        : `contactKeys: ["${f.key || 'key-value'}"]`;
-      return `mutation {\n  createRightToBeForgottenJob(\n    ${id}\n    sendNotifications: true\n  ) {\n    jobId\n  }\n}`;
+      const flt = [];
+      if (f.signalType) flt.push(`signalType: "${f.signalType}"`);
+      if (f.from) flt.push(`observedTimestampFrom: "${f.from}"`);
+      if (f.to)   flt.push(`observedTimestampTo: "${f.to}"`);
+      if (f.source && f.source !== '(any)') flt.push(`source: [${f.source}]`);
+      const ids = Q.rows(f.ident, 'v').map(r => `{ ${r.k || 'contactKey'}: "${r.v}" }`);
+      if (ids.length) flt.push(`identifiableAttributes: [${ids.join(', ')}]`);
+      const args = [`first: ${f.first || 10}`];
+      if (f.after) args.push(`after: "${f.after}"`);
+      args.push(`sortBy: ${f.sortBy || 'OBSERVED_TIMESTAMP'}`, `sortOrder: ${f.sortOrder || 'DESC'}`);
+      if (flt.length) args.push(`filter: {\n      ${flt.join('\n      ')}\n    }`);
+      return `{\n  signals(\n    ${args.join('\n    ')}\n  ) {\n    totalCount\n    nodes {\n      signalId\n      signalType\n      name\n      category\n      source\n      contactId\n      observedTimestamp\n      signalContent\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n  }\n}`;
     },
   },
 ]},
@@ -710,20 +732,17 @@ const OPS = [
     desc:'DOCS-VERIFIED: Add a single product to the product catalog. productId is the key field and must be unique.',
     sections:[
       { t:'Product Attributes', i:'📦', f:[
-        { id:'productId',   label:'Product ID (key)', type:'text', req:true, ph:'AC-NEW-001' },
-        { id:'productName', label:'Product Name',     type:'text', ph:'My New Product' },
-        { id:'unitPrice',   label:'Unit Price',       type:'text', ph:'29.99' },
-        { id:'currency',    label:'Currency',         type:'text', ph:'USD' },
-        { id:'category',    label:'Category',         type:'text', ph:'Electronics' },
+        { id:'productId', label:'Product ID (key)', type:'text', req:true, ph:'AC-NEW-001' },
+        { id:'attrs', label:'Attribute Name / Value', type:'list', add:'Add another attribute',
+          cols:[{ k:'name', ph:'productName' }, { k:'value', ph:'value' }],
+          def:[{ name:'productName', value:'' }, { name:'unitPrice', value:'' },
+               { name:'currency', value:'' }, { name:'category', value:'' }] },
       ]},
     ],
     build(f) {
       const attrs = Q.attrLinesTyped([
-        { name:'productId',   value: f.productId },
-        { name:'productName', value: f.productName },
-        { name:'unitPrice',   value: f.unitPrice },
-        { name:'currency',    value: f.currency },
-        { name:'category',    value: f.category },
+        { name:'productId', value: f.productId },
+        ...Q.rows(f.attrs, 'name', 'value'),
       ]);
       return `mutation {\n  createProduct(\n    productInput: {\n      attributes: [\n        ${attrs}\n      ]\n    }\n  ) {\n    attributes { name value type }\n  }\n}`;
     },
@@ -736,17 +755,14 @@ const OPS = [
         { id:'productId', label:'Product ID', type:'text', req:true, ph:'772' },
       ]},
       { t:'Update', i:'✏️', f:[
-        { id:'attrName',  label:'Attribute to Update',    type:'text', req:true, ph:'unitPrice' },
-        { id:'attrVal',   label:'New Value',              type:'text', req:true, ph:'529.99' },
-        { id:'attrName2', label:'Attribute 2 (optional)', type:'text', ph:'availability' },
-        { id:'attrVal2',  label:'Value 2 (optional)',     type:'text', ph:'In stock' },
+        { id:'attrs', label:'Attribute Name / New Value', type:'list', req:true, add:'Add another attribute',
+          cols:[{ k:'name', ph:'unitPrice' }, { k:'value', ph:'529.99' }],
+          def:[{ name:'', value:'' }] },
       ]},
     ],
     build(f) {
-      const attrs = Q.attrLinesTyped([
-        { name: f.attrName  || 'unitPrice', value: f.attrVal  || 'val' },
-        { name: f.attrName2,                value: f.attrVal2 },
-      ]);
+      const rows = Q.rows(f.attrs, 'name', 'value');
+      const attrs = Q.attrLinesTyped(rows.length ? rows : [{ name:'unitPrice', value:'val' }]);
       return `mutation {\n  updateProduct(\n    productId: "${f.productId || 'REPLACE_PRODUCT_ID'}"\n    updatedProduct: {\n      attributes: [\n        ${attrs}\n      ]\n    }\n  ) {\n    modifiedCount\n  }\n}`;
     },
   },
@@ -773,15 +789,15 @@ const OPS = [
         { id:'dsId', label:'Product Catalog DataSet ID', type:'text', req:true, ph:'CAT-2025YG' },
       ]},
       { t:'New Attributes', i:'➕', f:[
-        { id:'attr1Name', label:'Attribute 1 Name', type:'text',   req:true, ph:'Available Offline' },
-        { id:'attr1Type', label:'Attribute 1 Type', type:'select', opts:['TEXT','NUMBER','DATE','BOOLEAN','ARRAY'], def:'TEXT' },
-        { id:'attr2Name', label:'Attribute 2 Name (optional)', type:'text', ph:'Region' },
-        { id:'attr2Type', label:'Attribute 2 Type', type:'select', opts:['TEXT','NUMBER','DATE','BOOLEAN','ARRAY'], def:'TEXT' },
+        { id:'attrs', label:'Attribute Name / Type', type:'list', req:true, add:'Add another attribute',
+          cols:[{ k:'name', ph:'Available Offline' }, { k:'type', opts:['TEXT','NUMBER','DATE','BOOLEAN','ARRAY'] }],
+          def:[{ name:'', type:'TEXT' }] },
       ]},
     ],
     build(f) {
-      let attrs = `{ name: "${f.attr1Name || 'NewAttribute'}", type: ${f.attr1Type || 'TEXT'} }`;
-      if (f.attr2Name) attrs += `\n          { name: "${f.attr2Name}", type: ${f.attr2Type || 'TEXT'} }`;
+      const rows = Q.rows(f.attrs, 'name');
+      const attrs = (rows.length ? rows : [{ name:'NewAttribute' }])
+        .map(r => `{ name: "${r.name}", type: ${r.type || 'TEXT'} }`).join('\n          ');
       return `mutation {\n  updateDataSet(\n    where: { dataSetId: "${f.dsId || 'REPLACE_CATALOG_ID'}" }\n    to: {\n      attributes: {\n        create: [\n          ${attrs}\n        ]\n      }\n    }\n  ) {\n    dataSetId\n  }\n}`;
     },
   },
@@ -803,7 +819,7 @@ const State = {
     this.op   = op;
     this.vals = {};
     (op.sections || []).forEach(sec =>
-      sec.f.forEach(f => { if (f.def !== undefined) this.vals[f.id] = f.def; })
+      sec.f.forEach(f => { if (f.def !== undefined) this.vals[f.id] = structuredClone(f.def); })
     );
   },
 
@@ -880,10 +896,11 @@ const FormRenderer = {
     }
 
     op.sections.forEach(sec => {
-      const el      = document.createElement('div');
+      const el      = document.createElement('details');
       el.className  = 'section';
+      el.open       = true;
       el.innerHTML  =
-        `<div class="sec-hdr"><span>${sec.i}</span>${sec.t}</div>` +
+        `<summary class="sec-hdr"><span>${sec.i}</span>${sec.t}</summary>` +
         `<div class="sec-body">${sec.f.map(f => this._renderField(f)).join('')}</div>`;
       pane.appendChild(el);
     });
@@ -906,13 +923,42 @@ const FormRenderer = {
       : `<span class="opt-tag">optional</span>`;
     const hint  = f.hint ? `<div class="field-hint">${f.hint}</div>` : '';
     const warn  = f.warn ? `<div class="field-warn">⚠ ${f.warn}</div>` : '';
+    const body  = f.type === 'list' ? `<div class="field" data-listwrap="${f.id}">${input}</div>` : input;
 
-    return `<div class="field"><label>${f.label} ${badge}</label>${input}${hint}${warn}</div>`;
+    return `<div class="field"><label>${f.label} ${badge}</label>${body}${hint}${warn}</div>`;
+  },
+
+  /** Re-render one list field after a row is added or removed */
+  _refreshList(id) {
+    const wrap = document.querySelector(`[data-listwrap="${id}"]`);
+    if (wrap) wrap.innerHTML = FieldRenderers.list(State.findField(id), State.vals[id]);
+    OutputRenderer.update();
   },
 
   /** Single delegated listener handles all input types */
   _bindDelegate(pane) {
+    pane.addEventListener('click', e => {
+      const add = e.target.dataset?.add, rm = e.target.dataset?.rm;
+      if (add) {
+        (State.vals[add] ||= []).push({});
+        this._refreshList(add);
+        document.querySelector(`[data-listwrap="${add}"] .list-row:last-of-type input`)?.focus();
+      } else if (rm) {
+        State.vals[rm].splice(+e.target.dataset.i, 1);
+        this._refreshList(rm);
+      }
+    });
+    /* List cells: data-list / data-i / data-k → State.vals[list][i][k] */
+    const listInput = e => {
+      const d = e.target.dataset;
+      if (!d?.list) return false;
+      State.vals[d.list][+d.i][d.k] = e.target.value;
+      OutputRenderer.update();
+      return true;
+    };
+    pane.addEventListener('input', listInput);
     pane.addEventListener('change', e => {
+      if (listInput(e)) return;
       const id = e.target.id?.replace(/^f-/, '');
       if (!id) return;
       const field = State.findField(id);

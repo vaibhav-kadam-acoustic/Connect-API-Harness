@@ -241,6 +241,10 @@ const FieldRenderers = {
     const checked = (val !== undefined ? val : f.def) ? 'checked' : '';
     return `<label class="checkbox-row"><input id="f-${f.id}" type="checkbox" ${checked}/><span>${f.label}</span></label>`;
   },
+  /** Native date+time picker; value is local time "YYYY-MM-DDTHH:MM" */
+  datetime(f, val) {
+    return `<input id="f-${f.id}" type="datetime-local" value="${_esc(val??'')}"/>`;
+  },
   textarea(f, val) {
     return `<textarea id="f-${f.id}" rows="${f.rows||3}" placeholder="${f.ph||''}">${_esc(val??'')}</textarea>`;
   },
@@ -302,6 +306,18 @@ const Q = {
         return `{ name: "${p.name}", value: ${v} }`;
       })
       .join('\n        '),
+
+  /** datetime-local value → ISO-8601 UTC (e.g. 2026-10-01T18:30:00.000Z).
+      Empty → now + fallbackDays (placeholder), or '' if no fallback. */
+  iso: (v, fallbackDays, endOfMinute) => {
+    if (v) {
+      const d = new Date(v);
+      if (isNaN(d)) return v;
+      if (endOfMinute) d.setSeconds(59, 999);   /* "23:59" end → 23:59:59.999 */
+      return d.toISOString();
+    }
+    return fallbackDays === undefined ? '' : new Date(Date.now() + fallbackDays * 864e5).toISOString();
+  },
 
   /** Rows from a list field with every listed key non-empty */
   rows: (list, ...keys) => (list || []).filter(r => keys.every(k => r[k] !== undefined && r[k] !== '')),
@@ -701,8 +717,8 @@ const OPS = [
       ]},
       { t:'Filter (optional)', i:'⚙', f:[
         { id:'signalType', label:'Signal Type', type:'text', ph:'addToCart' },
-        { id:'from',       label:'Observed From', type:'text', ph:'2026-10-01T00:00:00Z' },
-        { id:'to',         label:'Observed To',   type:'text', ph:'2026-10-06T23:59:59Z' },
+        { id:'from',       label:'Observed From', type:'datetime', hint:'Your local time — converted to UTC in the query' },
+        { id:'to',         label:'Observed To',   type:'datetime', hint:'Your local time — converted to UTC in the query' },
         { id:'source',     label:'Source', type:'select',
           opts:['(any)','LOG_SIGNAL','SIGNAL_DEFINITION','EVENT_MANAGER','SIGNAL_COLLECTOR','BULK_IMPORT','BEHAVIORAL_AGGREGATIONS'], def:'(any)' },
         { id:'ident', label:'Contact identifier', type:'list', add:'Add another identifier',
@@ -713,8 +729,8 @@ const OPS = [
     build(f) {
       const flt = [];
       if (f.signalType) flt.push(`signalType: "${f.signalType}"`);
-      if (f.from) flt.push(`observedTimestampFrom: "${f.from}"`);
-      if (f.to)   flt.push(`observedTimestampTo: "${f.to}"`);
+      if (f.from) flt.push(`observedTimestampFrom: "${Q.iso(f.from)}"`);
+      if (f.to)   flt.push(`observedTimestampTo: "${Q.iso(f.to, undefined, true)}"`);
       if (f.source && f.source !== '(any)') flt.push(`source: [${f.source}]`);
       const ids = Q.rows(f.ident, 'v').map(r => `{ ${r.k || 'contactKey'}: "${r.v}" }`);
       if (ids.length) flt.push(`identifiableAttributes: [${ids.join(', ')}]`);
@@ -731,8 +747,8 @@ const OPS = [
       { t:'Job', i:'⚙️', f:[
         { id:'jobName', label:'Job Name', type:'text', req:true, ph:'July Email Engagement Export',
           hint:'Must be unique' },
-        { id:'tsStart', label:'Timestamp Start', type:'text', req:true, ph:'2026-10-01T00:00:00.000Z' },
-        { id:'tsEnd',   label:'Timestamp End',   type:'text', req:true, ph:'2026-10-06T23:59:59.999Z' },
+        { id:'tsStart', label:'Timestamp Start', type:'datetime', req:true, hint:'Your local time — converted to UTC in the query' },
+        { id:'tsEnd',   label:'Timestamp End',   type:'datetime', req:true, hint:'Your local time — converted to UTC in the query' },
         { id:'noPii',   label:'Suppress PII fields', type:'checkbox', def:false },
       ]},
       { t:'Signal Types', i:'📶', f:[
@@ -759,8 +775,8 @@ const OPS = [
       const types = Q.rows(f.types, 't').map(r => `"${r.t}"`);
       const sig = [
         `signalTypes: [${(types.length ? types : ['"emailOpen"']).join(', ')}]`,
-        `timestampStart: "${f.tsStart || '2026-10-01T00:00:00.000Z'}"`,
-        `timestampEnd: "${f.tsEnd || '2026-10-06T23:59:59.999Z'}"`,
+        `timestampStart: "${Q.iso(f.tsStart, -7)}"`,
+        `timestampEnd: "${Q.iso(f.tsEnd, 0, true)}"`,
       ];
       if (f.noPii) sig.push('suppressPiiFields: true');
       const ids = (f.contactIds || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -821,16 +837,16 @@ const OPS = [
         { id:'after',      label:'After Cursor',  type:'text', ph:'endCursor from previous page' },
         { id:'signalType', label:'Signal Type',   type:'text', ph:'order' },
         { id:'appKey',     label:'App Key',       type:'text', ph:'your-app-key' },
-        { id:'from',       label:'Observed From', type:'text', ph:'2026-10-01T00:00:00Z' },
-        { id:'to',         label:'Observed To',   type:'text', ph:'2026-10-06T23:59:59Z' },
+        { id:'from',       label:'Observed From', type:'datetime', hint:'Your local time — converted to UTC in the query' },
+        { id:'to',         label:'Observed To',   type:'datetime', hint:'Your local time — converted to UTC in the query' },
       ]},
     ],
     build(f) {
       const flt = [];
       if (f.signalType) flt.push(`signalType: "${f.signalType}"`);
       if (f.appKey)     flt.push(`appKey: ["${f.appKey}"]`);
-      if (f.from)       flt.push(`observedTimestampFrom: "${f.from}"`);
-      if (f.to)         flt.push(`observedTimestampTo: "${f.to}"`);
+      if (f.from)       flt.push(`observedTimestampFrom: "${Q.iso(f.from)}"`);
+      if (f.to)         flt.push(`observedTimestampTo: "${Q.iso(f.to, undefined, true)}"`);
       const args = [`first: ${f.first || 10}`];
       if (f.after) args.push(`after: "${f.after}"`);
       if (flt.length) args.push(`filter: {\n      ${flt.join('\n      ')}\n    }`);

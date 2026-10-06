@@ -81,6 +81,7 @@ header{border-bottom:1px solid var(--line);padding:0 20px;height:52px;display:fl
 .list-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .list-row input{flex:1 1 90px;min-width:0}
 .list-row select{flex:0 0 92px;min-width:0;padding:7px 4px}
+.list-row select:first-child:only-of-type{flex:1 1 92px}
 .rm-btn{flex-shrink:0;width:26px;height:30px;border:1.5px solid var(--line);background:transparent;border-radius:8px;color:var(--muted);cursor:pointer}
 .rm-btn:hover{border-color:var(--red);color:var(--red)}
 .add-btn{padding:6px 10px;border:1.5px dashed var(--peri);background:transparent;border-radius:8px;color:var(--peri);cursor:pointer;font-family:var(--ui);font-size:12px;font-weight:600}
@@ -352,6 +353,15 @@ const Q = {
    │ rows?    number   textarea row height                   │
    └─────────────────────────────────────────────────────────┘
    ═══════════════════════════════════════════════════════════════ */
+/** Signal types from the Connect export docs (first 14 are behavior signals) */
+const SIGNAL_TYPES = [
+  'accountRegistered','addToCart','browseAbandonment','cartAbandonment','error','identification','loggedIn',
+  'onSiteSearch','order','pageView','productConfiguration','productView','removedFromCart','richMediaInteraction',
+  'emailClick','emailDelivery','emailFailure','emailInbound','emailOpen','emailSend',
+  'smsClick','smsDelivery','smsFailure','smsInbound','smsSend',
+  'whatsAppClick','whatsAppDelivery','whatsAppFailure','whatsAppInbound','whatsAppOpen','whatsAppSend',
+];
+
 const OPS = [
 
 /* ── Introspection ─────────────────────────────────────────── */
@@ -612,8 +622,8 @@ const OPS = [
       return `mutation ($importInput: ImportInput!) {\n  createImportJob(importInput: $importInput) {\n    id\n  }\n}\n\n# Variables:\n# {\n#   "importInput": {\n#     "dataSetId": "${f.dsId || 'REPLACE_AUDIENCE_ID'}",\n#     "jobName": "${f.jobName || 'Import contacts'}",\n#     "importType": "${f.importType || 'ADD_UPDATE'}",\n#     "createSegment": ${f.createSegment || 'false'},\n#     "fileFormat": "DELIMITED",\n#     "delimiter": "${delimEsc}",\n#     "skipFirstRow": ${f.skipFirstRow || 'true'},\n#     "fileLocation": {\n#       "type": "SFTP",\n#       "filename": "${f.filename || 'contacts.csv'}",${folderLine}\n#     },\n#     "mappings": [\n#       { "columnIndex": 1, "attributeName": "Contact Key" },\n#       { "columnIndex": 2, "attributeName": "Email" },\n#       { "columnIndex": 3, "attributeName": "First Name" }\n#     ]\n#   }\n# }`;
     },
   },
-  { id:'dataJob', label:'Get Import Job Status', type:'q',
-    desc:'LIVE-VERIFIED: Check status of a data job by ID. No row counts in tracking — monitor via status/startedAt/endedAt/errors.',
+  { id:'dataJob', label:'Get Data Job Status', type:'q',
+    desc:'LIVE-VERIFIED: Check status of an import or signal-export job by ID (createImportJob id or exportSignals dataJobId). No row counts in tracking — monitor via status/startedAt/endedAt/errors.',
     fix:'DataJob.tracking is JobTracking (createdAt/lastModifiedAt only) — no row counts. Use startedAt/endedAt/errors instead.',
     sections:[
       { t:'Job', i:'📋', f:[
@@ -713,6 +723,118 @@ const OPS = [
       args.push(`sortBy: ${f.sortBy || 'OBSERVED_TIMESTAMP'}`, `sortOrder: ${f.sortOrder || 'DESC'}`);
       if (flt.length) args.push(`filter: {\n      ${flt.join('\n      ')}\n    }`);
       return `{\n  signals(\n    ${args.join('\n    ')}\n  ) {\n    totalCount\n    nodes {\n      signalId\n      signalType\n      name\n      category\n      source\n      contactId\n      observedTimestamp\n      signalContent\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n  }\n}`;
+    },
+  },
+  { id:'exportSignals', label:'Export Signals', type:'m',
+    desc:'DOCS-VERIFIED: Exports signals to a CSV on the Connect SFTP server. Track with Get Data Job Status (dataJobId) or Data management > Job monitoring. Files are deleted after 28 days.',
+    sections:[
+      { t:'Job', i:'⚙️', f:[
+        { id:'jobName', label:'Job Name', type:'text', req:true, ph:'July Email Engagement Export',
+          hint:'Must be unique' },
+        { id:'tsStart', label:'Timestamp Start', type:'text', req:true, ph:'2026-10-01T00:00:00.000Z' },
+        { id:'tsEnd',   label:'Timestamp End',   type:'text', req:true, ph:'2026-10-06T23:59:59.999Z' },
+        { id:'noPii',   label:'Suppress PII fields', type:'checkbox', def:false },
+      ]},
+      { t:'Signal Types', i:'📶', f:[
+        { id:'types', label:'Signal Type', type:'list', req:true, add:'Add another signal type',
+          cols:[{ k:'t', opts: SIGNAL_TYPES }], def:[{ t:'emailOpen' }] },
+      ]},
+      { t:'Contacts (optional)', i:'👤', f:[
+        { id:'contactIds', label:'Contact IDs (comma-separated)', type:'text', ph:'uuid-1, uuid-2',
+          hint:'Limit the export to these contacts' },
+      ]},
+      { t:'File Placement (optional)', i:'📁', f:[
+        { id:'dest', label:'Placement', type:'select', opts:['Default','Full path','Folder + prefix'], def:'Default' },
+        { id:'path', label:'Full path (.csv)', type:'text', ph:'SMS_Reports/Q3/SMS_Signals_Export.csv' },
+        { id:'parentFolder', label:'Parent folder', type:'text', ph:'Export/Signals/Shopping_Funnel',
+          hint:'Must start with Export/Signals' },
+        { id:'prefix', label:'Naming prefix', type:'text', ph:'December_2026_' },
+      ]},
+      { t:'Notify on Completion (optional)', i:'✉️', f:[
+        { id:'emails', label:'Email', type:'list', add:'Add another email',
+          cols:[{ k:'e', ph:'name@example.com' }], def:[] },
+      ]},
+    ],
+    build(f) {
+      const types = Q.rows(f.types, 't').map(r => `"${r.t}"`);
+      const sig = [
+        `signalTypes: [${(types.length ? types : ['"emailOpen"']).join(', ')}]`,
+        `timestampStart: "${f.tsStart || '2026-10-01T00:00:00.000Z'}"`,
+        `timestampEnd: "${f.tsEnd || '2026-10-06T23:59:59.999Z'}"`,
+      ];
+      if (f.noPii) sig.push('suppressPiiFields: true');
+      const ids = (f.contactIds || '').split(',').map(s => s.trim()).filter(Boolean);
+      if (ids.length) sig.push(`contactIds: [${ids.map(s => `"${s}"`).join(', ')}]`);
+      const args = [`jobName: "${f.jobName || 'Signals export'}"`,
+        `export: {\n      signals: {\n        ${sig.join('\n        ')}\n      }\n    }`];
+      const sftp = f.dest === 'Full path'
+        ? [`path: "${f.path || 'Export/Signals/Signals_Export.csv'}"`]
+        : f.dest === 'Folder + prefix'
+        ? [f.parentFolder && `parentFolder: "${f.parentFolder}"`, f.prefix && `namingPrefix: "${f.prefix}"`].filter(Boolean)
+        : [];
+      if (sftp.length) args.push(`to: {\n      sftp: {\n        ${sftp.join('\n        ')}\n      }\n    }`);
+      const em = Q.rows(f.emails, 'e').map(r => `{ channel: EMAIL, destination: "${r.e}" }`);
+      if (em.length) args.push(`notifications: [${em.join(', ')}]`);
+      return `mutation {\n  exportSignals(\n    ${args.join('\n    ')}\n  ) {\n    dataJobId\n    path\n    fileFormat\n  }\n}`;
+    },
+  },
+  { id:'createSignals', label:'Create Signal (real-time import)', type:'m',
+    desc:'DOCS-VERIFIED: Sends a behavior signal to Connect in real time. audience maps the signal to a contact (and can update attributes). Returns the new signalIds.',
+    sections:[
+      { t:'Signal', i:'📶', f:[
+        { id:'appKey',     label:'App Key', type:'text', req:true, ph:'your-app-key' },
+        { id:'signalType', label:'Signal Type', type:'select', req:true, opts: SIGNAL_TYPES.slice(0, 14), def:'order' },
+        { id:'sessionId',  label:'Session ID', type:'text', ph:'SESS-789456123AB' },
+        { id:'test',       label:'Test signal (test: true)', type:'checkbox', def:true },
+      ]},
+      { t:'Audience (contact mapping)', i:'👤', f:[
+        { id:'audience', label:'Attribute Name / Value', type:'list', req:true, add:'Add another attribute',
+          hint:'Include the key or an addressable field (e.g. Email) so Connect can match the contact',
+          cols:[{ k:'name', ph:'Email' }, { k:'value', ph:'user@example.com' }],
+          def:[{ name:'Email', value:'' }] },
+      ]},
+      { t:'Signal Content', i:'🧾', f:[
+        { id:'content', label:'Property / Value', type:'list', add:'Add another property',
+          hint:'Numbers and true/false are sent unquoted. Required properties vary by signal type — see the Connect signal docs.',
+          cols:[{ k:'name', ph:'orderId' }, { k:'value', ph:'02937-2026' }],
+          def:[{ name:'', value:'' }] },
+      ]},
+    ],
+    build(f) {
+      const lit = v => (v !== '' && !isNaN(v)) || v === 'true' || v === 'false' ? v : `"${v}"`;
+      const content = [`signalType: "${f.signalType || 'order'}"`,
+        ...Q.rows(f.content, 'name', 'value').map(r => `${r.name}: ${lit(r.value)}`)];
+      const aud = Q.rows(f.audience, 'name', 'value');
+      const lines = [`appKey: "${f.appKey || 'YOUR_APP_KEY'}"`];
+      if (f.sessionId) lines.push(`sessionId: "${f.sessionId}"`);
+      if (f.test) lines.push('test: true');
+      lines.push(`audience: [\n          ${(aud.length ? aud : [{ name:'Email', value:'user@example.com' }]).map(r => `{ name: "${r.name}", value: "${r.value}" }`).join('\n          ')}\n        ]`);
+      lines.push(`signalContent: {\n          ${content.join('\n          ')}\n        }`);
+      return `mutation {\n  createSignals(\n    signals: [\n      {\n        ${lines.join('\n        ')}\n      }\n    ]\n  ) {\n    signalIds\n  }\n}`;
+    },
+  },
+  { id:'dlqSignals', label:'Query Rejected Signals (DLQ)', type:'q',
+    desc:'Signals that failed validation and landed in the dead-letter queue, with the rejection reason and validation results. Use to debug Create Signal or SDK signals that never appear.',
+    sections:[
+      { t:'Filter (optional)', i:'⚙', f:[
+        { id:'first',      label:'First (limit)', type:'number', def:'10', ph:'10' },
+        { id:'after',      label:'After Cursor',  type:'text', ph:'endCursor from previous page' },
+        { id:'signalType', label:'Signal Type',   type:'text', ph:'order' },
+        { id:'appKey',     label:'App Key',       type:'text', ph:'your-app-key' },
+        { id:'from',       label:'Observed From', type:'text', ph:'2026-10-01T00:00:00Z' },
+        { id:'to',         label:'Observed To',   type:'text', ph:'2026-10-06T23:59:59Z' },
+      ]},
+    ],
+    build(f) {
+      const flt = [];
+      if (f.signalType) flt.push(`signalType: "${f.signalType}"`);
+      if (f.appKey)     flt.push(`appKey: ["${f.appKey}"]`);
+      if (f.from)       flt.push(`observedTimestampFrom: "${f.from}"`);
+      if (f.to)         flt.push(`observedTimestampTo: "${f.to}"`);
+      const args = [`first: ${f.first || 10}`];
+      if (f.after) args.push(`after: "${f.after}"`);
+      if (flt.length) args.push(`filter: {\n      ${flt.join('\n      ')}\n    }`);
+      return `{\n  dlqSignals(\n    ${args.join('\n    ')}\n  ) {\n    totalCount\n    nodes {\n      signalId\n      signalType\n      appKey\n      observedTimestamp\n      reason\n      validationResults\n      signalContent\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n  }\n}`;
     },
   },
 ]},

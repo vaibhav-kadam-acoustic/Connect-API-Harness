@@ -13,6 +13,7 @@
  */
 
 const ALLOWED_ORIGINS = [
+  'https://acoustic-vaibhav-kadam.github.io',
   'https://vaibhav-kadam-acoustic.github.io',
   'https://connect-api-harness.acoustic.com',
   'http://localhost',

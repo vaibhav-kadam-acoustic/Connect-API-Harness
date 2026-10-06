@@ -408,6 +408,36 @@ const OPS = [
     sections:[],
     build: () => `{\n  dataSetAttributeCategories {\n    nodes {\n      name\n      icon\n    }\n  }\n}`,
   },
+  { id:'contactAttrs', label:'Query Contact Attributes', type:'q',
+    desc:'DOCS-VERIFIED: Lists the attributes defined on your audience — name, type, category and whether each is the key or an addressable channel field. Max 2000 attributes per audience.',
+    sections:[
+      { t:'DataSet', i:'📦', f:[
+        { id:'dsType', label:'Dataset Type', type:'select',
+          opts:['AUDIENCE','REFERENCE_SET','(all — no filter)'], def:'AUDIENCE',
+          hint:'No filter returns reference set attributes too' },
+      ]},
+      { t:'Narrow Attributes (optional)', i:'⚙', f:[
+        { id:'selNames', label:'selectByName (comma-separated)', type:'text', ph:'Email, First Name' },
+        { id:'selChan',  label:'selectByChannel', type:'select',
+          opts:['(any)','EMAIL','SMS','WHATSAPP','MOBILE'], def:'(any)' },
+      ]},
+      { t:'Response Fields', i:'📋', f:[
+        { id:'incIdent', label:'Include identifyAs (key, channels)', type:'checkbox', def:true },
+        { id:'incPrec',  label:'Include decimalPrecision',           type:'checkbox', def:false },
+      ]},
+    ],
+    build(f) {
+      const flt = f.dsType && f.dsType !== '(all — no filter)' ? `(${Q.arrayFilter('type', f.dsType)})` : '';
+      const aArgs = [];
+      if (f.selNames) aArgs.push(`selectByName: [${f.selNames.split(',').map(s => s.trim()).filter(Boolean).map(s => `"${s}"`).join(', ')}]`);
+      if (f.selChan && f.selChan !== '(any)') aArgs.push(`selectByChannel: [${f.selChan}]`);
+      const a = aArgs.length ? `(${aArgs.join(', ')})` : '';
+      return `query {\n  dataSets${flt} {\n    nodes {\n      dataSetId\n      name\n      attributes${a} {\n        name\n        type\n        category`
+        + (f.incPrec  ? `\n        decimalPrecision` : '')
+        + (f.incIdent ? `\n        identifyAs {\n          key\n          channels\n        }` : '')
+        + `\n      }\n    }\n  }\n}`;
+    },
+  },
   { id:'contacts', label:'Query Contacts', type:'q',
     desc:'Paginated list of contacts. dataSetId is optional. Filter using field/value pairs.',
     sections:[
